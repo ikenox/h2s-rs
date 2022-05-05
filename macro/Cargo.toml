@@ -1,21 +1,20 @@
 [package]
-name = "h2s"
+name = "h2s_macro"
 version = "0.1.0"
 authors = ["Naoto Ikeno <ikenox@gmail.com>"]
 edition = "2021"
 repository = "https://github.com/ikenox/h2s"
-description = """
-A declarative HTML parser library.
-"""
 license = "MIT"
-readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-h2s_core = { version = "=0.1.0", path = "core" }
-h2s_macro = { version = "=0.1.0", path = "macro" }
+quote = "1.0.18"
+syn = "1.0.92"
+darling = "0.14.1"
+proc-macro2 = "1.0.38"
 kuchiki = "0.8.1"
+h2s_core = { version = "=0.1.0", path = "../core" }
 
-[workspace]
-members = ["macro", "core"]
+[lib]
+proc-macro = true
