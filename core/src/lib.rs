@@ -42,7 +42,7 @@ pub fn extract_from<A, T: FromHtml<Args = A>, N: HtmlElements>(
 }
 
 pub trait FromHtml: Sized {
-    type Args;
+    type Args: ExtractionArgs;
     fn extract_from<N: HtmlElements>(select: N, args: &Self::Args)
         -> Result<Self, ExtractionError>;
 }
