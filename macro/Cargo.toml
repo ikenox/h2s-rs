@@ -12,7 +12,7 @@ license = "MIT"
 quote = "1.0.18"
 syn = "1.0.92"
 darling = "0.14.1"
-proc-macro2 = "1.0.38"
+proc-macro2 = "1.0.37"
 kuchiki = "0.8.1"
 h2s_core = { version = "=0.1.0", path = "../core" }
 
