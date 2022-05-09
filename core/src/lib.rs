@@ -70,7 +70,7 @@ pub struct ArgBuilder<'a> {
     pub attr: Option<&'a str>,
 }
 
-pub trait ExtractionArgs: Debug {}
+pub trait ExtractionArgs: Debug + Send + Sync {}
 impl ExtractionArgs for () {}
 impl ExtractionArgs for TextExtractionMethod {}
 
