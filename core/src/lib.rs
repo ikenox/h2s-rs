@@ -8,19 +8,19 @@ use kuchiki::{ElementData, NodeDataRef, NodeRef, Selectors};
 
 use crate::TextExtractionMethod::{Attribute, TextContent};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum ExtractionError {
     Unexpected(String),
     HtmlStructureUnmatched(GetElementError),
     AttributeNotFound,
     Child {
         selector: Option<String>,
-        args: Rc<dyn ExtractionArgs>,
+        args: Box<dyn ExtractionArgs>,
         error: Box<ExtractionError>,
     },
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum GetElementError {
     NoElementFound,
     EmptyDocument,

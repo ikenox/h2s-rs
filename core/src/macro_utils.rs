@@ -27,7 +27,7 @@ pub fn build_struct_field_value<
             extract_from(select, &args_builder.build_args()).map_err(|inner| {
                 ExtractionError::Child {
                     selector: selector.as_ref().map(|s| s.to_string()),
-                    args: Rc::new(args_builder.build_args()),
+                    args: Box::new(args_builder.build_args()),
                     error: Box::new(inner),
                 }
             })
@@ -37,7 +37,7 @@ pub fn build_struct_field_value<
             extract_from(select, &args_builder.build_args()).map_err(|inner| {
                 ExtractionError::Child {
                     selector: selector.as_ref().map(|s| s.to_string()),
-                    args: Rc::new(args_builder.build_args()),
+                    args: Box::new(args_builder.build_args()),
                     error: Box::new(inner),
                 }
             })
