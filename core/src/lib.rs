@@ -1,4 +1,5 @@
 use std::any::Any;
+use std::fmt::{Debug, Display};
 use std::rc::Rc;
 
 use kuchiki::iter::{Descendants, Elements, Select};
@@ -13,7 +14,8 @@ pub enum ExtractionError {
     HtmlStructureUnmatched(GetElementError),
     AttributeNotFound,
     Child {
-        args: Rc<dyn Any>,
+        selector: String,
+        args: Rc<dyn ExtractionArgs>,
         error: Box<ExtractionError>,
     },
 }
@@ -45,6 +47,7 @@ pub trait FromHtml: Sized {
         -> Result<Self, ExtractionError>;
 }
 
+#[derive(Debug, Clone)]
 pub enum TextExtractionMethod {
     TextContent,
     Attribute(String),
@@ -64,7 +67,11 @@ pub struct ArgBuilder<'a> {
     pub attr: Option<&'a str>,
 }
 
-pub trait IntoArgs<T> {
+pub trait ExtractionArgs: Debug {}
+impl ExtractionArgs for () {}
+impl ExtractionArgs for TextExtractionMethod {}
+
+pub trait IntoArgs<T: ExtractionArgs> {
     fn build_args(&self) -> T;
 }
 

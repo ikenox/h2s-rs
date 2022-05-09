@@ -4,8 +4,6 @@ use crate::{
 };
 use kuchiki::iter::{Descendants, Elements, Select};
 use kuchiki::{ElementData, NodeDataRef, NodeRef};
-use std::env::Args;
-use std::rc::Rc;
 
 impl FromHtml for String {
     type Args = TextExtractionMethod;

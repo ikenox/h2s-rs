@@ -1,9 +1,16 @@
 use crate::ExtractionError::HtmlStructureUnmatched;
-use crate::{extract_from, ArgBuilder, ExtractionError, FromHtml, HtmlElements, IntoArgs};
+use crate::{
+    extract_from, ArgBuilder, ExtractionArgs, ExtractionError, FromHtml, HtmlElements, IntoArgs,
+};
 use kuchiki::{ElementData, NodeData, NodeDataRef, NodeRef};
 use std::rc::Rc;
 
-pub fn build_struct_field_value<'a, T: FromHtml<Args = A>, A: 'static, B: IntoArgs<A>>(
+pub fn build_struct_field_value<
+    'a,
+    T: FromHtml<Args = A>,
+    A: ExtractionArgs + 'static,
+    B: IntoArgs<A>,
+>(
     node: &NodeRef,
     selector: impl AsRef<str>,
     args_builder: &B,
@@ -15,6 +22,7 @@ pub fn build_struct_field_value<'a, T: FromHtml<Args = A>, A: 'static, B: IntoAr
             ExtractionError::Unexpected(format!("invalid css selector: `{}`", selector.as_ref()))
         })?;
     extract_from(select, &args_builder.build_args()).map_err(|inner| ExtractionError::Child {
+        selector: selector.as_ref().to_string(),
         args: Rc::new(args_builder.build_args()),
         error: Box::new(inner),
     })
