@@ -2,6 +2,9 @@ use h2s::FromHtml;
 
 #[derive(FromHtml, Debug, Eq, PartialEq)]
 pub struct Page {
+    // TODO support extraction from root element
+    // #[h2s(attr = "lang")]
+    // language: String,
     #[h2s(select = "h1.blog-title")]
     blog_title: String,
     #[h2s(select = ".articles > div > .detail > .author")]
@@ -26,7 +29,7 @@ pub struct ArticleElem {
 
 fn main() {
     let html = r#"
-<html>
+<html lang="en">
 <body>
 <h1 class="blog-title">My tech blog</h1>
 <div class="articles">
