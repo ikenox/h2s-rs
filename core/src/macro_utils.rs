@@ -4,7 +4,6 @@ use kuchiki::{ElementData, NodeData, NodeDataRef, NodeRef};
 
 pub fn build_struct_field_value<'a, T: FromHtml<Args = A>, A, B: IntoArgs<A>>(
     node: &NodeRef,
-    // manipulation
     selector: impl AsRef<str>,
     args_builder: &B,
 ) -> Result<T, ExtractionError> {
@@ -18,7 +17,6 @@ pub fn build_struct_field_value<'a, T: FromHtml<Args = A>, A, B: IntoArgs<A>>(
 }
 
 pub fn get_single_node_for_build_struct<E: HtmlElements>(
-    // target elements
     e: E,
 ) -> Result<NodeDataRef<ElementData>, ExtractionError> {
     e.get_exactly_one().map_err(|e| HtmlStructureUnmatched(e))
