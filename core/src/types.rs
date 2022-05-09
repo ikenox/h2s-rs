@@ -1,11 +1,11 @@
-use crate::ExtractionError::ElementUnmatched;
+use crate::ExtractionError::HtmlStructureUnmatched;
 use crate::{
-    ExtractionError, FromHtml, GetElementError, H2sError, HtmlElements, TendrilSink,
-    TextExtractionMethod,
+    ExtractionError, FromHtml, GetElementError, HtmlElements, TendrilSink, TextExtractionMethod,
 };
 use kuchiki::iter::{Descendants, Elements, Select};
 use kuchiki::{ElementData, NodeDataRef, NodeRef};
 use std::env::Args;
+use std::rc::Rc;
 
 impl FromHtml for String {
     type Args = TextExtractionMethod;
@@ -13,7 +13,9 @@ impl FromHtml for String {
         mut select: N,
         args: &Self::Args,
     ) -> Result<Self, ExtractionError> {
-        let node = select.get_exactly_one().map_err(|e| ElementUnmatched(e))?;
+        let node = select
+            .get_exactly_one()
+            .map_err(|e| HtmlStructureUnmatched(e))?;
         Ok(match args {
             TextExtractionMethod::TextContent => node.as_node().text_contents(),
             TextExtractionMethod::Attribute(attr) => node
@@ -35,7 +37,7 @@ impl<T: FromHtml> FromHtml for Option<T> {
     ) -> Result<Self, ExtractionError> {
         let node = select
             .exactly_one_or_none()
-            .map_err(|e| ElementUnmatched(e))?;
+            .map_err(|e| HtmlStructureUnmatched(e))?;
         Ok(if let Some(a) = node {
             Some(T::extract_from(a, &args)?)
         } else {

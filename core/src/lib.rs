@@ -1,28 +1,30 @@
-use crate::TextExtractionMethod::{Attribute, TextContent};
+use std::any::Any;
+use std::rc::Rc;
+
 use kuchiki::iter::{Descendants, Elements, Select};
 use kuchiki::traits::TendrilSink;
-use kuchiki::{ElementData, Node, NodeDataRef, NodeRef, Selectors};
-use std::borrow::Borrow;
+use kuchiki::{ElementData, NodeDataRef, NodeRef, Selectors};
 
-#[derive(Debug, Clone)]
-pub struct H2sError {
-    node_info: (), // todo contain informative data
-    detail: ExtractionError,
-}
+use crate::TextExtractionMethod::{Attribute, TextContent};
 
 #[derive(Debug, Clone)]
 pub enum ExtractionError {
     Unexpected(String),
-    ElementUnmatched(GetElementError),
+    HtmlStructureUnmatched(GetElementError),
     AttributeNotFound,
-    Child(Box<H2sError>),
+    Child {
+        args: Rc<dyn Any>,
+        error: Box<ExtractionError>,
+    },
 }
+
 #[derive(Debug, Clone)]
 pub enum GetElementError {
     NoElementFound,
     EmptyDocument,
 }
 
+pub mod macro_utils;
 pub mod types;
 
 pub fn extract_from_html<T: FromHtml<Args = ()>>(s: impl AsRef<str>) -> Result<T, ExtractionError> {
@@ -35,15 +37,6 @@ pub fn extract_from<A, T: FromHtml<Args = A>, N: HtmlElements>(
     args: &A,
 ) -> Result<T, ExtractionError> {
     T::extract_from(node, args)
-}
-
-pub fn select(
-    node: &NodeRef,
-    selector: impl AsRef<str>,
-) -> Result<Select<Elements<Descendants>>, ExtractionError> {
-    let selector = selector.as_ref();
-    node.select(selector)
-        .map_err(|_| ExtractionError::Unexpected(format!("invalid css selector: `{}`", selector)))
 }
 
 pub trait FromHtml: Sized {

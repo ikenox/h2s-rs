@@ -67,9 +67,10 @@ pub fn derive(input: TokenStream) -> TokenStream {
                         };
 
                         quote!(
-                            #ident: ::h2s::extract_from(
-                                ::h2s::select(node, #selector)?,
-                                &( ::h2s::ArgBuilder{ attr: #attr }.build_args() ),
+                            #ident: ::h2s::macro_utils::build_struct_field_value(
+                                node,
+                                #selector,
+                                &( ::h2s::ArgBuilder{ attr: #attr } )
                             )?
                         )
                     },
@@ -82,10 +83,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
                         mut select: N,
                         args: &Self::Args,
                     ) -> Result<Self, ::h2s::ExtractionError> {
-                        use ::h2s::IntoArgs;
-                        let node = select
-                            .get_exactly_one()
-                            .map_err(|e| ::h2s::ExtractionError::ElementUnmatched(e))?;
+                        let node = ::h2s::macro_utils::get_single_node_for_build_struct(select)?;
                         let node = node.as_node();
                         Ok(Self{
                             #(#field_and_values),*
