@@ -93,22 +93,16 @@ impl HtmlElements for Select<Elements<Descendants>> {
 
 impl HtmlElements for NodeRef {
     fn exactly_one_or_none(self) -> Result<Option<NodeDataRef<ElementData>>, GetElementError> {
-        let root = self.first_child();
-        Ok(root.and_then(|root| NodeDataRef::new_opt(root, |f| f.as_element())))
+        Ok(NodeDataRef::new_opt(self, |f| f.as_element()))
     }
 
     fn get_exactly_one(self) -> Result<NodeDataRef<ElementData>, GetElementError> {
-        let root = self
-            .first_child()
-            .ok_or_else(|| GetElementError::EmptyDocument)?;
-
-        NodeDataRef::new_opt(root, |f| f.as_element())
+        NodeDataRef::new_opt(self, |f| f.as_element())
             .ok_or_else(|| GetElementError::NoElementFound)
     }
 
     fn list(self) -> Vec<NodeDataRef<ElementData>> {
-        let root = self.first_child();
-        root.and_then(|root| NodeDataRef::new_opt(root, |f| f.as_element()))
+        NodeDataRef::new_opt(self, |f| f.as_element())
             .into_iter()
             .collect()
     }

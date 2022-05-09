@@ -6,9 +6,8 @@ use h2s::FromHtml;
 fn comprehensive() {
     #[derive(FromHtml, Debug, Eq, PartialEq)]
     pub struct Page {
-        // TODO support extraction from root element
-        // #[h2s(attr = "lang")]
-        // language: String,
+        #[h2s(attr = "lang")]
+        language: String,
         #[h2s(select = "h1.blog-title")]
         blog_title: String,
         #[h2s(select = ".articles > div > .detail > .author")]

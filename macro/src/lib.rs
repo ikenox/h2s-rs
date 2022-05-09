@@ -19,7 +19,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
     #[darling(attributes(h2s))]
     pub struct H2sFieldReceiver {
         ident: Option<syn::Ident>,
-        select: String,
+        select: Option<String>,
         attr: Option<String>,
     }
 
@@ -57,10 +57,15 @@ pub fn derive(input: TokenStream) -> TokenStream {
                             .as_ref()
                             .expect(&format!("all struct fields for h2s must be named."));
                         // check selector validity at compile time
-                        Selectors::compile(&select)
-                            .expect(&format!("invalid css selector: `{}`", select));
+                        if let Some(selector) = select {
+                            Selectors::compile(selector)
+                                .expect(&format!("invalid css selector: `{}`", selector));
+                        }
 
-                        let selector = quote!(#select.to_string());
+                        let selector = match select {
+                            Some(selector) => quote!(Some(#selector)),
+                            None => quote!(None),
+                        };
                         let attr = match attr {
                             Some(attr) => quote!(Some(#attr)),
                             None => quote!(None),

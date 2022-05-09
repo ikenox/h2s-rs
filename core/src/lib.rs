@@ -14,7 +14,7 @@ pub enum ExtractionError {
     HtmlStructureUnmatched(GetElementError),
     AttributeNotFound,
     Child {
-        selector: String,
+        selector: Option<String>,
         args: Rc<dyn ExtractionArgs>,
         error: Box<ExtractionError>,
     },
@@ -30,7 +30,10 @@ pub mod macro_utils;
 pub mod types;
 
 pub fn extract_from_html<T: FromHtml<Args = ()>>(s: impl AsRef<str>) -> Result<T, ExtractionError> {
-    let doc = kuchiki::parse_html().one(s.as_ref());
+    let doc = kuchiki::parse_html()
+        .one(s.as_ref())
+        .first_child()
+        .ok_or_else(|| ExtractionError::HtmlStructureUnmatched(GetElementError::EmptyDocument))?;
     extract_from(doc, &())
 }
 
