@@ -1,7 +1,4 @@
 use darling::{FromDeriveInput, FromField};
-use h2s_core::ExtractionError::Unexpected;
-use h2s_core::TextExtractionMethod;
-use h2s_core::TextExtractionMethod::{Attribute, TextContent};
 use kuchiki::Selectors;
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
@@ -42,16 +39,12 @@ pub fn derive(input: TokenStream) -> TokenStream {
                 )
                 .fields
                 .into_iter()
-                .enumerate()
                 .map(
-                    |(
-                        i,
-                        H2sFieldReceiver {
-                            ident,
-                            select,
-                            attr,
-                        },
-                    )| {
+                    |H2sFieldReceiver {
+                         ident,
+                         select,
+                         attr,
+                     }| {
                         // all fields must be named
                         let ident = ident
                             .as_ref()
@@ -63,19 +56,18 @@ pub fn derive(input: TokenStream) -> TokenStream {
                         }
 
                         let selector = match select {
-                            Some(selector) => quote!(Some(#selector)),
+                            Some(selector) => quote!(Some(#selector .to_string())),
                             None => quote!(None),
                         };
                         let attr = match attr {
-                            Some(attr) => quote!(Some(#attr)),
+                            Some(attr) => quote!(Some(#attr .to_string())),
                             None => quote!(None),
                         };
 
                         quote!(
-                            #ident: ::h2s::macro_utils::build_struct_field_value(
-                                node,
-                                #selector,
-                                &( ::h2s::ArgBuilder{ attr: #attr } )
+                            #ident: ::h2s::extract::<_,_,_,N>(
+                                ::h2s::SourceExtractor{ selector: #selector, node: node.clone() },
+                                ::h2s::ArgBuilder{ attr: #attr },
                             )?
                         )
                     },
@@ -83,13 +75,12 @@ pub fn derive(input: TokenStream) -> TokenStream {
 
             tokens.extend(quote! {
                 impl ::h2s::FromHtml for #ident {
-                    type Args = ();
-                    fn extract_from<N: ::h2s::HtmlElements>(
-                        mut select: N,
+                    type Source<N: ::h2s::HtmlNodeRef> = N;
+                    type Args = ::h2s::StructExtractionArgs;
+                    fn extract_from<N: ::h2s::HtmlNodeRef>(
+                        node: &Self::Source<N>,
                         args: &Self::Args,
                     ) -> Result<Self, ::h2s::ExtractionError> {
-                        let node = ::h2s::macro_utils::get_single_node_for_build_struct(select)?;
-                        let node = node.as_node();
                         Ok(Self{
                             #(#field_and_values),*
                         })
