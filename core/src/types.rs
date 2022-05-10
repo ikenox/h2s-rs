@@ -1,43 +1,47 @@
-use crate::ExtractionError::HtmlStructureUnmatched;
 use crate::{
-    ExtractionError, FromHtml, GetElementError, HtmlElements, TendrilSink, TextExtractionMethod,
+    ExtractionError, FromHtml, GetElementError, HtmlNode, SelectError, TendrilSink,
+    TextExtractionMethod,
 };
 use kuchiki::iter::{Descendants, Elements, Select};
-use kuchiki::{ElementData, NodeDataRef, NodeRef};
+use kuchiki::{ElementData, Node, NodeDataRef, NodeRef};
+use std::borrow::Borrow;
 
 impl FromHtml for String {
+    type Source = NodeRef;
     type Args = TextExtractionMethod;
-    fn extract_from<N: HtmlElements>(
-        mut select: N,
-        args: &Self::Args,
-    ) -> Result<Self, ExtractionError> {
-        let node = select
-            .get_exactly_one()
-            .map_err(|e| HtmlStructureUnmatched(e))?;
+
+    fn extract_from(mut source: &Self::Source, args: &Self::Args) -> Result<Self, ExtractionError> {
         Ok(match args {
-            TextExtractionMethod::TextContent => node.as_node().text_contents(),
-            TextExtractionMethod::Attribute(attr) => node
-                .attributes
-                .borrow()
-                .get(attr.as_str())
-                .ok_or_else(|| ExtractionError::AttributeNotFound)?
-                .to_string(),
+            TextExtractionMethod::TextContent => source.text_contents(),
+            TextExtractionMethod::Attribute(attr) => source
+                .as_element()
+                .and_then(|e| {
+                    e.borrow()
+                        .attributes
+                        .borrow()
+                        .get(attr.as_str())
+                        .map(|a| a.to_string())
+                })
+                .ok_or_else(|| ExtractionError::AttributeNotFound)?,
         })
     }
 }
 
 impl<T: FromHtml> FromHtml for Option<T> {
+    type Source = Option<T::Source>;
     type Args = T::Args;
 
-    fn extract_from<N: HtmlElements>(
-        select: N,
-        args: &Self::Args,
-    ) -> Result<Self, ExtractionError> {
-        let node = select
-            .exactly_one_or_none()
-            .map_err(|e| HtmlStructureUnmatched(e))?;
-        Ok(if let Some(a) = node {
-            Some(T::extract_from(a, &args)?)
+    fn extract_from(source: &Self::Source, args: &Self::Args) -> Result<Self, ExtractionError> {
+        Ok(if let Some(source) = source {
+            Some(
+                T::extract_from(source, &args).map_err(|e| ExtractionError::Child {
+                    selector: None, // todo?
+                    // todo
+                    // args: Box::new(args.clone()),
+                    args: Box::new(()),
+                    error: Box::new(e),
+                })?,
+            )
         } else {
             None
         })
@@ -45,65 +49,36 @@ impl<T: FromHtml> FromHtml for Option<T> {
 }
 
 impl<T: FromHtml> FromHtml for Vec<T> {
+    type Source = Vec<T::Source>;
     type Args = T::Args;
-    fn extract_from<N: HtmlElements>(
-        select: N,
-        args: &Self::Args,
-    ) -> Result<Self, ExtractionError> {
-        select
-            .list()
+    fn extract_from(source: &Self::Source, args: &Self::Args) -> Result<Self, ExtractionError> {
+        source
             .into_iter()
-            .map(|e| T::extract_from(e, &args))
-            .fold(Ok(vec![]), |acc, parse_result| {
-                acc.and_then(|v| parse_result.map(|t| (v, t)))
+            .enumerate()
+            .fold(Ok(vec![]), |acc, (i, source)| {
+                acc.and_then(|v| T::extract_from(source, &args).map(|t| (v, t)))
                     .map(|(mut v, t)| {
                         v.push(t);
                         v
+                    })
+                    .map_err(|e| ExtractionError::Child {
+                        selector: Some(format!("[{}]", i)), // todo use enum
+                        // todo
+                        // args: Box::new(args.clone()),
+                        args: Box::new(()),
+                        error: Box::new(e),
                     })
             })
     }
 }
 
-impl HtmlElements for NodeDataRef<ElementData> {
-    fn exactly_one_or_none(self) -> Result<Option<NodeDataRef<ElementData>>, GetElementError> {
-        Ok(Some(self))
-    }
-    fn get_exactly_one(self) -> Result<NodeDataRef<ElementData>, GetElementError> {
-        Ok(self)
-    }
-
-    fn list(self) -> Vec<NodeDataRef<ElementData>> {
-        vec![self]
-    }
-}
-
-impl HtmlElements for Select<Elements<Descendants>> {
-    fn exactly_one_or_none(mut self) -> Result<Option<NodeDataRef<ElementData>>, GetElementError> {
-        Ok(self.next())
-    }
-
-    fn get_exactly_one(mut self) -> Result<NodeDataRef<ElementData>, GetElementError> {
-        Ok(self.next().ok_or_else(|| GetElementError::NoElementFound)?)
-    }
-
-    fn list(self) -> Vec<NodeDataRef<ElementData>> {
-        self.collect()
-    }
-}
-
-impl HtmlElements for NodeRef {
-    fn exactly_one_or_none(self) -> Result<Option<NodeDataRef<ElementData>>, GetElementError> {
-        Ok(NodeDataRef::new_opt(self, |f| f.as_element()))
-    }
-
-    fn get_exactly_one(self) -> Result<NodeDataRef<ElementData>, GetElementError> {
-        NodeDataRef::new_opt(self, |f| f.as_element())
-            .ok_or_else(|| GetElementError::NoElementFound)
-    }
-
-    fn list(self) -> Vec<NodeDataRef<ElementData>> {
-        NodeDataRef::new_opt(self, |f| f.as_element())
+impl HtmlNode for NodeRef {
+    fn selected<S: AsRef<str>>(&self, sel: S) -> Result<Vec<Self>, SelectError> {
+        Ok(self
+            .select(sel.as_ref())
+            .map_err(|_| SelectError)?
             .into_iter()
-            .collect()
+            .map(|a| a.as_node().clone())
+            .collect())
     }
 }

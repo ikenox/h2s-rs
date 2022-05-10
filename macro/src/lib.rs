@@ -83,13 +83,12 @@ pub fn derive(input: TokenStream) -> TokenStream {
 
             tokens.extend(quote! {
                 impl ::h2s::FromHtml for #ident {
+                    type Source = ::kuchiki::NodeRef;
                     type Args = ();
-                    fn extract_from<N: ::h2s::HtmlElements>(
-                        mut select: N,
+                    fn extract_from(
+                        node: &Self::Source,
                         args: &Self::Args,
                     ) -> Result<Self, ::h2s::ExtractionError> {
-                        let node = ::h2s::macro_utils::get_single_node_for_build_struct(select)?;
-                        let node = node.as_node();
                         Ok(Self{
                             #(#field_and_values),*
                         })

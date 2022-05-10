@@ -1,10 +1,7 @@
-use std::any::Any;
-use std::fmt::{Debug, Display};
-use std::rc::Rc;
+use std::fmt::Debug;
 
-use kuchiki::iter::{Descendants, Elements, Select};
 use kuchiki::traits::TendrilSink;
-use kuchiki::{ElementData, NodeDataRef, NodeRef, Selectors};
+use kuchiki::NodeRef;
 
 use crate::TextExtractionMethod::{Attribute, TextContent};
 
@@ -23,31 +20,69 @@ pub enum ExtractionError {
 #[derive(Debug)]
 pub enum GetElementError {
     NoElementFound,
+    StructureMismatched,
     EmptyDocument,
 }
 
 pub mod macro_utils;
 pub mod types;
 
-pub fn extract_from_html<T: FromHtml<Args = ()>>(s: &str) -> Result<T, ExtractionError> {
-    let doc = kuchiki::parse_html()
-        .one(s)
-        .first_child()
-        .ok_or_else(|| ExtractionError::HtmlStructureUnmatched(GetElementError::EmptyDocument))?;
-    extract_from(doc, &())
-}
-
-pub fn extract_from<A, T: FromHtml<Args = A>, N: HtmlElements>(
-    node: N,
-    args: &A,
+pub fn extract_from_html<T: FromHtml<Args = (), Source = NodeRef>>(
+    s: &str,
 ) -> Result<T, ExtractionError> {
-    T::extract_from(node, args)
+    let doc = kuchiki::parse_html().one(s);
+    let node = T::Source::build_source_from(Foo::Single(doc))
+        .map_err(|e| ExtractionError::HtmlStructureUnmatched(e))?;
+    T::extract_from(&node, &())
 }
 
 pub trait FromHtml: Sized {
+    type Source: ExtractionSource;
     type Args: ExtractionArgs;
-    fn extract_from<N: HtmlElements>(select: N, args: &Self::Args)
-        -> Result<Self, ExtractionError>;
+    fn extract_from(source: &Self::Source, args: &Self::Args) -> Result<Self, ExtractionError>;
+}
+
+pub trait ExtractionSource: Sized + Debug {
+    type Es: ExtractionSource;
+    fn build_source_from(n: Foo<Self::Es>) -> Result<Self, GetElementError>;
+}
+
+impl<N: HtmlNode> ExtractionSource for N {
+    type Es = N;
+    fn build_source_from(n: Foo<Self::Es>) -> Result<Self, GetElementError> {
+        match &n {
+            Foo::List(nn) => nn
+                .get(0)
+                .ok_or_else(|| GetElementError::NoElementFound)
+                .map(|a| a.clone()),
+            Foo::Single(n) => Ok(n.clone()),
+        }
+    }
+}
+
+impl<S: ExtractionSource> ExtractionSource for Vec<S> {
+    type Es = S;
+    fn build_source_from(n: Foo<Self::Es>) -> Result<Self, GetElementError> {
+        match n {
+            Foo::List(nn) => Ok(nn),
+            Foo::Single(n) => Err(GetElementError::StructureMismatched),
+        }
+    }
+}
+impl<S: ExtractionSource> ExtractionSource for Option<S> {
+    type Es = S;
+    fn build_source_from(n: Foo<Self::Es>) -> Result<Self, GetElementError> {
+        Ok(match n {
+            Foo::List(mut nn) => nn.into_iter().next(),
+            Foo::Single(n) => Some(n),
+        })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum Foo<T> {
+    List(Vec<T>),
+    Single(T),
 }
 
 #[derive(Debug, Clone)]
@@ -56,10 +91,8 @@ pub enum TextExtractionMethod {
     Attribute(String),
 }
 
-pub trait HtmlElements {
-    fn exactly_one_or_none(self) -> Result<Option<NodeDataRef<ElementData>>, GetElementError>;
-    fn get_exactly_one(self) -> Result<NodeDataRef<ElementData>, GetElementError>;
-    fn list(self) -> Vec<NodeDataRef<ElementData>>;
+pub trait HtmlNode: Sized + Clone + Debug {
+    fn selected<S: AsRef<str>>(&self, sel: S) -> Result<Vec<Self>, SelectError>;
 }
 
 pub trait ExtractFromNode<T>: Sized {
@@ -70,7 +103,7 @@ pub struct ArgBuilder<'a> {
     pub attr: Option<&'a str>,
 }
 
-pub trait ExtractionArgs: Debug + Send + Sync {}
+pub trait ExtractionArgs: Debug {}
 impl ExtractionArgs for () {}
 impl ExtractionArgs for TextExtractionMethod {}
 
@@ -93,3 +126,5 @@ impl<'a> IntoArgs<TextExtractionMethod> for ArgBuilder<'a> {
         }
     }
 }
+
+pub struct SelectError;
