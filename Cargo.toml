@@ -15,7 +15,9 @@ readme = "README.md"
 [dependencies]
 h2s_core = { version = "=0.1.0", path = "core" }
 h2s_macro = { version = "=0.1.0", path = "macro" }
-kuchiki = "0.8.1"
 
 [workspace]
 members = ["macro", "core"]
+
+[dev-dependencies]
+scraper = "0.13.0"

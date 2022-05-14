@@ -1,26 +1,43 @@
-use darling::{FromDeriveInput, FromField};
-use kuchiki::Selectors;
+use darling::{FromDeriveInput, FromField, FromMeta};
 use proc_macro::TokenStream;
+use quote::__private::ext::RepToTokensExt;
 use quote::{quote, ToTokens};
-use syn::parse_macro_input;
+use scraper::Selector;
+use std::fmt::format;
+use syn::{parse_macro_input, PathArguments, PathSegment, Type, TypePath};
 
 #[proc_macro_derive(FromHtml, attributes(h2s))]
 pub fn derive(input: TokenStream) -> TokenStream {
     #[derive(Debug, FromDeriveInput)]
     #[darling(attributes(h2s), supports(struct_any))]
-    pub struct H2sStructReceiver {
+    pub struct FromHtmlStructReceiver {
         ident: syn::Ident,
         data: darling::ast::Data<(), H2sFieldReceiver>,
     }
     #[derive(Debug, FromField)]
     #[darling(attributes(h2s))]
     pub struct H2sFieldReceiver {
+        ty: syn::Type,
         ident: Option<syn::Ident>,
         select: Option<String>,
-        attr: Option<String>,
+        extract: Option<H2sExtractionMethod>,
+    }
+    #[derive(Debug, FromMeta)]
+    #[darling(rename_all = "snake_case")]
+    pub enum H2sExtractionMethod {
+        Attr(String),
+        Text,
+    }
+    impl H2sExtractionMethod {
+        fn desc(&self) -> String {
+            match self {
+                H2sExtractionMethod::Attr(a) => format!("attr=\"{a}\""),
+                H2sExtractionMethod::Text => format!("text"),
+            }
+        }
     }
 
-    impl ToTokens for H2sStructReceiver {
+    impl ToTokens for FromHtmlStructReceiver {
         fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
             let Self {
                 ref ident,
@@ -41,46 +58,58 @@ pub fn derive(input: TokenStream) -> TokenStream {
                 .into_iter()
                 .map(
                     |H2sFieldReceiver {
+                         ty,
                          ident,
                          select,
-                         attr,
+                         extract,
                      }| {
                         // all fields must be named
                         let ident = ident
                             .as_ref()
                             .expect(&format!("all struct fields for h2s must be named."));
-                        // check selector validity at compile time
-                        if let Some(selector) = select {
-                            Selectors::compile(selector)
-                                .expect(&format!("invalid css selector: `{}`", selector));
-                        }
 
-                        let selector = match select {
-                            Some(selector) => quote!(Some(#selector .to_string())),
-                            None => quote!(None),
+                        let sel = select.as_ref().map(|a|a.to_string()).unwrap_or("".to_string());
+                        let source = match &select {
+                            Some(selector) => {
+                                // check selector validity at compile time
+                                Selector::parse(selector)
+                                    .expect(&format!("invalid css selector: `{}`", selector));
+                                // TODO cache parsed selector
+                                quote!(
+                                    source.select(
+                                       &N::Selector::parse(#selector).map_err(|e|::h2s::ExtractionError::Unexpected(e))?
+                                    )
+                                )
+                            }
+                            None => quote!(source.clone()),
                         };
-                        let attr = match attr {
-                            Some(attr) => quote!(Some(#attr .to_string())),
-                            None => quote!(None),
+                        let args = match extract {
+                            Some(H2sExtractionMethod::Attr(attr)) => {
+                                quote!(::h2s::StringExtractionMethod::Attribute(#attr .to_string()))
+                            }
+                            Some(H2sExtractionMethod::Text) => {
+                                quote!(::h2s::StringExtractionMethod::Text)
+                            }
+                            None => quote!(()),
                         };
-
-                        quote!(
-                            #ident: ::h2s::extract::<_,_,_,N>(
-                                ::h2s::SourceExtractor{ selector: #selector, node: node.clone() },
-                                ::h2s::ArgBuilder{ attr: #attr },
-                            )?
-                        )
+                        quote!(#ident: ::h2s::macro_utils::adjust_and_parse::<_,N,_>(#source, &#args)
+                            .map_err(|e| ::h2s::ExtractionError::Child{
+                                context: ::h2s::Position::Selector(Some( #sel .to_string() )),
+                                error: Box::new(e),
+                            })
+                            ?)
                     },
                 );
 
             tokens.extend(quote! {
                 impl ::h2s::FromHtml for #ident {
                     type Source<N: ::h2s::HtmlNodeRef> = N;
-                    type Args = ::h2s::StructExtractionArgs;
-                    fn extract_from<N: ::h2s::HtmlNodeRef>(
-                        node: &Self::Source<N>,
+                    type Args = ();
+                    fn from_html<N: ::h2s::HtmlNodeRef>(
+                        source: &Self::Source<N>,
                         args: &Self::Args,
                     ) -> Result<Self, ::h2s::ExtractionError> {
+                        use ::h2s::Selector;
                         Ok(Self{
                             #(#field_and_values),*
                         })
@@ -90,7 +119,12 @@ pub fn derive(input: TokenStream) -> TokenStream {
         }
     }
 
-    let struct_receiver: H2sStructReceiver =
-        H2sStructReceiver::from_derive_input(&parse_macro_input!(input)).unwrap();
+    let struct_receiver: FromHtmlStructReceiver =
+        match FromHtmlStructReceiver::from_derive_input(&parse_macro_input!(input)) {
+            Ok(a) => a,
+            Err(e) => {
+                return TokenStream::from(e.write_errors());
+            }
+        };
     quote!(#struct_receiver).into()
 }

@@ -1,21 +1,19 @@
 #![feature(generic_associated_types)]
 
 use h2s::FromHtml;
-use scraper::{Html, Selector};
 
 fn main() {
     #[derive(FromHtml, Debug, Eq, PartialEq)]
     pub struct Page {
-        #[h2s(extract(attr = "lang"))]
-        lang: String,
-        #[h2s(select = "head", extract(attr = "foo"))]
-        foo: String,
+        // #[h2s(select = "html", extract(attr = "lang"))]
+        // lang: String,
         #[h2s(select = "h1.blog-title", extract = "text")]
         blog_title: String,
         #[h2s(select = ".articles > div", extract(attr = "data-author"))]
         article_authors: Vec<String>,
         #[h2s(select = ".articles > div")]
         articles: Vec<ArticleElem>,
+
         #[h2s(select = "footer")]
         footer_maybe: Option<Footer>,
         #[h2s(select = "footer")]
@@ -31,6 +29,8 @@ fn main() {
         modified_date: Option<String>,
         #[h2s(select = ".foo > div", extract(attr = "data-foobar"))]
         foobar: Option<String>,
+        #[h2s(select = "p.summary", extract = "text")]
+        summary: String,
     }
 
     #[derive(FromHtml, Debug, Eq, PartialEq)]
@@ -42,16 +42,17 @@ fn main() {
     let html = r#"
 <!DOCTYPE html>
 <html lang="en">
-<head foo="bar"></head>
 <body>
 <h1 class="blog-title">My tech blog</h1>
 <div class="articles">
     <div data-author="Alice">
         <h2>article1</h2>
+        <p class="summary">summary</p>
     </div>
     <div data-author="Bob">
         <h2>article2</h2>
         <p class="modified-date">2020-05-01</p>
+        <p class="summary">summary</p>
     </div>
     <div data-author="Ikeno">
         <h2>article3</h2>
@@ -63,9 +64,7 @@ fn main() {
 </html>
     "#;
 
-    let doc = Html::parse_document(html);
-
-    let res = Page::from_html(&doc.root_element(), &());
+    let res = h2s::utils::extract_from_html::<Page>(html);
     match res {
         Ok(p) => {
             println!("{:#?}", p);

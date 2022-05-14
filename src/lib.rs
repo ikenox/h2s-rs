@@ -1,5 +1,3 @@
-pub use h2s_core::{
-    extract, utils, ArgBuilder, ExtractionError, FromHtml, HtmlNodeRef, IntoArgs, SourceExtractor,
-    StructExtractionArgs,
-};
+pub use h2s_core::impls::*;
+pub use h2s_core::*;
 pub use h2s_macro::*;
