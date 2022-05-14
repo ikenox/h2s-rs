@@ -1,8 +1,9 @@
-use darling::{FromDeriveInput, FromField};
+use darling::{FromDeriveInput, FromField, FromMeta};
 use kuchiki::Selectors;
 use proc_macro::TokenStream;
+use quote::__private::ext::RepToTokensExt;
 use quote::{quote, ToTokens};
-use syn::parse_macro_input;
+use syn::{parse_macro_input, PathArguments, PathSegment, Type, TypePath};
 
 #[proc_macro_derive(FromHtml, attributes(h2s))]
 pub fn derive(input: TokenStream) -> TokenStream {
@@ -15,9 +16,12 @@ pub fn derive(input: TokenStream) -> TokenStream {
     #[derive(Debug, FromField)]
     #[darling(attributes(h2s))]
     pub struct H2sFieldReceiver {
+        ty: syn::Type,
         ident: Option<syn::Ident>,
         select: Option<String>,
         attr: Option<String>,
+        #[darling(default)]
+        text: bool,
     }
 
     impl ToTokens for H2sStructReceiver {
@@ -41,9 +45,11 @@ pub fn derive(input: TokenStream) -> TokenStream {
                 .into_iter()
                 .map(
                     |H2sFieldReceiver {
+                         ty,
                          ident,
                          select,
                          attr,
+                         text,
                      }| {
                         // all fields must be named
                         let ident = ident
@@ -55,31 +61,50 @@ pub fn derive(input: TokenStream) -> TokenStream {
                                 .expect(&format!("invalid css selector: `{}`", selector));
                         }
 
-                        let selector = match select {
-                            Some(selector) => quote!(Some(#selector .to_string())),
-                            None => quote!(None),
+                        let n = match select {
+                            Some(selector) => {
+                                quote!( ::h2s::select(input, & #selector .to_string())? )
+                            }
+                            None => quote!(input.clone()),
                         };
-                        let attr = match attr {
-                            Some(attr) => quote!(Some(#attr .to_string())),
-                            None => quote!(None),
+                        let extractor = if let Some(attr) = attr {
+                            quote!(::h2s::AttributeExtractor{attr: #attr .to_string()})
+                        } else if *text {
+                            quote!(::h2s::TextContentExtractor)
+                        } else {
+                            quote!(::h2s::StructExtractor::new())
                         };
 
-                        quote!(
-                            #ident: ::h2s::extract::<_,_,_,N>(
-                                ::h2s::SourceExtractor{ selector: #selector, node: node.clone() },
-                                ::h2s::ArgBuilder{ attr: #attr },
-                            )?
-                        )
+                        // FIXME naive implementation to build type-hint quote
+                        //       Or, if rust compiler is improved in future, can this annotation be removed?
+                        let type_hint = match ty {
+                            Type::Path(p) => p
+                                .path
+                                .segments
+                                .first()
+                                .map(|s| match &s.arguments {
+                                    PathArguments::AngleBracketed(_) => {
+                                        let ident = &s.ident;
+                                        quote!(#ident<N>)
+                                    }
+                                    PathArguments::Parenthesized(_) => quote!(_),
+                                    PathArguments::None => {
+                                        quote!(N)
+                                    }
+                                })
+                                .unwrap_or_else(|| quote!(_)),
+                            _ => quote!(_),
+                        };
+
+                        quote!(#ident: ::h2s::extract::<#type_hint,_,_>(#n, #extractor)
+                            .map_err(|a|a)?)
                     },
                 );
 
             tokens.extend(quote! {
                 impl ::h2s::FromHtml for #ident {
-                    type Source<N: ::h2s::HtmlNodeRef> = N;
-                    type Args = ::h2s::StructExtractionArgs;
-                    fn extract_from<N: ::h2s::HtmlNodeRef>(
-                        node: &Self::Source<N>,
-                        args: &Self::Args,
+                    fn from_html<N: ::h2s::HtmlNodeRef>(
+                        input: &N,
                     ) -> Result<Self, ::h2s::ExtractionError> {
                         Ok(Self{
                             #(#field_and_values),*

@@ -1,48 +1,73 @@
 #![feature(generic_associated_types)]
 pub mod utils;
 
-use std::fmt::{Debug, Display, Formatter};
+use std::any::Any;
+use std::fmt::{format, Debug, Display, Formatter};
+use std::marker::PhantomData;
 
 use kuchiki::traits::TendrilSink;
 use kuchiki::NodeRef;
 
-pub fn extract<S, T, B, N>(source: S, args: B) -> Result<T, ExtractionError>
-where
-    N: HtmlNodeRef,
-    S: SourceAdjuster<T::Source<N>>,
-    T: FromHtml,
-    B: IntoArgs<T::Args>,
-    T::Args: 'static,
-{
-    let adjusted = source
+// ==========
+pub fn select<N: HtmlNodeRef>(input: &N, selector: &String) -> Result<Vec<N>, ExtractionError> {
+    input
+        .selected(selector)
+        .map_err(|_| ExtractionError::Unexpected(format!("select failed")))
+}
+
+pub fn extract<T: Nodes, S: SourceAdjuster<T>, E: Extractor>(
+    source: S,
+    extractor: E,
+) -> Result<T::Structure<E::Output>, ExtractionError> {
+    source
         .adjust_to()
-        .map_err(|a| ExtractionError::GetElementError(a))?;
-    let args = args.build_args();
-    T::extract_from(&adjusted, &args)
-        // .map_err(|_| todo!())
-        .map_err(|inner| ExtractionError::Child {
-            source: adjusted.info(),
-            args: args.info(),
-            error: Box::new(inner),
-        })
+        .map_err(|e| ExtractionError::StructureUnmatched(e))
+        .and_then(|a| a.apply(extractor))
+}
+// ==========
+
+pub trait Nodes {
+    type Structure<T>;
+    fn apply<E: Extractor>(self, e: E) -> Result<Self::Structure<E::Output>, ExtractionError>;
 }
 
-pub trait ExtractionSource<N: HtmlNodeRef> {
-    fn info(&self) -> SourceInfo;
+impl<N: HtmlNodeRef> Nodes for N {
+    type Structure<A> = A;
+
+    fn apply<E: Extractor>(self, e: E) -> Result<Self::Structure<E::Output>, ExtractionError> {
+        e.extract(&self)
+    }
 }
 
-pub trait FromHtml: Sized {
-    // TODO future: change to associated type Source<T: HtmlNodeRef>
-    type Source<N: HtmlNodeRef>: ExtractionSource<N>;
-    type Args: ExtractionArgs;
-    fn extract_from<N: HtmlNodeRef>(
-        source: &Self::Source<N>,
-        args: &Self::Args,
-    ) -> Result<Self, ExtractionError>;
+impl<T: HtmlNodeRef> Nodes for Vec<T> {
+    type Structure<A> = Vec<A>;
+    fn apply<E: Extractor>(self, e: E) -> Result<Self::Structure<E::Output>, ExtractionError> {
+        self.into_iter()
+            .enumerate()
+            .map(|(i, a)| {
+                e.extract(&a).map_err(|a| ExtractionError::Child {
+                    context: format!("[{i}]"),
+                    error: Box::new(a),
+                })
+            })
+            .fold(Ok(vec![]), |acc, item| {
+                acc.and_then(|vv| item.map(|i| (vv, i))).map(|(mut vv, v)| {
+                    vv.push(v);
+                    vv
+                })
+            })
+    }
 }
 
-pub trait IntoArgs<A> {
-    fn build_args(&self) -> A;
+impl<T: HtmlNodeRef> Nodes for Option<T> {
+    type Structure<A> = Option<A>;
+    fn apply<E: Extractor>(self, e: E) -> Result<Self::Structure<E::Output>, ExtractionError> {
+        match self.as_ref().map(|n| e.extract(n)) {
+            Some(Ok(e)) => Ok(Some(e)),
+            Some(Err(e)) => Err(e),
+            None => Ok(None),
+        }
+    }
 }
 
 // todo not force to clone?
@@ -52,75 +77,53 @@ pub trait HtmlNodeRef: Sized + Clone {
     fn get_attribute<S: AsRef<str>>(&self, sel: S) -> Option<String>;
 }
 
-pub trait ExtractFromNode<T>: Sized {
-    fn extract(&self, n: &NodeRef) -> Result<Self, ExtractionError>;
-}
-
-pub trait ExtractionArgs {
-    fn info(&self) -> ArgsInfo;
-}
-
-pub trait SourceAdjuster<T> {
-    fn adjust_to(&self) -> Result<T, GetElementError>;
+pub trait SourceAdjuster<T: Nodes>: Nodes {
+    fn adjust_to(self) -> Result<T, StructureUnmatched>;
 }
 
 #[derive(Debug)]
 pub enum ExtractionError {
-    GetElementError(GetElementError),
-    TextExtractionError(TextExtractionError),
+    Unexpected(String),
+    StructureUnmatched(StructureUnmatched),
+    AttributeNotFound,
     Child {
-        source: SourceInfo,
-        args: ArgsInfo,
+        context: String,
         error: Box<ExtractionError>,
     },
 }
-
 #[derive(Debug)]
-pub struct SourceInfo;
-
-#[derive(Debug)]
-pub struct ArgsInfo;
-
-#[derive(Debug)]
-pub enum GetElementError {
+pub enum StructureUnmatched {
     NoElementFound,
     TooManyElements,
     Unexpected(String),
 }
 
-impl Display for GetElementError {
+impl Display for StructureUnmatched {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match &self {
-            GetElementError::NoElementFound => write!(f, "no element found"),
-            GetElementError::TooManyElements => write!(f, "too many elements"),
-            GetElementError::Unexpected(s) => write!(f, "unexpected error: {s}"),
+            StructureUnmatched::NoElementFound => write!(f, "no element found"),
+            StructureUnmatched::TooManyElements => write!(f, "too many elements"),
+            StructureUnmatched::Unexpected(s) => write!(f, "unexpected error: {s}"),
         }
     }
-}
-
-#[derive(Debug, Clone)]
-pub enum TextExtractionError {
-    AttributeNotFound(String),
 }
 
 impl Display for ExtractionError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         // todo
         match self {
-            Self::GetElementError(e) => {
+            Self::StructureUnmatched(e) => {
                 write!(f, "failed to get element: {e}")
             }
-            Self::TextExtractionError(e) => {
-                write!(f, "failed to extract text: {e}")
+            Self::AttributeNotFound => {
+                write!(f, "attribute not found")
             }
-            Self::Child {
-                source,
-                args,
-                error,
-            } => {
+            Self::Child { context, error } => {
                 // todo
-                write!(f, "\n {source:?} {args:?} > {error}")
+                // write!(f, "{source} $ {args} -> {error}")
+                write!(f, "{context} -> {error}")
             }
+            Self::Unexpected(detail) => write!(f, "unexpected error: {}", detail),
         }
     }
 }
@@ -128,45 +131,44 @@ impl Display for ExtractionError {
 #[derive(Debug, Clone)]
 pub struct SelectError;
 
-#[derive(Debug, Clone)]
-pub enum TextExtractionMethod {
-    TextContent,
-    Attribute(String),
+pub struct TextContentExtractor;
+pub struct AttributeExtractor {
+    pub attr: String,
+}
+pub struct StructExtractor<T: FromHtml>(PhantomData<T>);
+pub trait FromHtml: Sized {
+    fn from_html<N: HtmlNodeRef>(input: &N) -> Result<Self, ExtractionError>;
 }
 
-impl Display for TextExtractionError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match &self {
-            Self::AttributeNotFound(attr) => {
-                write!(f, "attribute `{attr}` is not found in the target element")
-            }
-        }
+impl<T: FromHtml> Extractor for StructExtractor<T> {
+    type Output = T;
+
+    fn extract<N: HtmlNodeRef>(&self, input: &N) -> Result<Self::Output, ExtractionError> {
+        T::from_html(input)
     }
 }
 
-impl TextExtractionMethod {
-    pub fn extract<T: HtmlNodeRef>(&self, node: &T) -> Result<String, TextExtractionError> {
-        let s = match &self {
-            TextExtractionMethod::TextContent => node.text_contents(),
-            TextExtractionMethod::Attribute(attr) => node
-                .get_attribute(attr)
-                .ok_or_else(|| TextExtractionError::AttributeNotFound(attr.clone()))?,
-        };
-        Ok(s)
+impl<T: FromHtml> StructExtractor<T> {
+    pub fn new() -> Self {
+        StructExtractor(PhantomData)
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct StructExtractionArgs;
+impl Extractor for TextContentExtractor {
+    type Output = String;
 
-impl ExtractionArgs for StructExtractionArgs {
-    fn info(&self) -> ArgsInfo {
-        ArgsInfo
+    fn extract<N: HtmlNodeRef>(&self, input: &N) -> Result<Self::Output, ExtractionError> {
+        // todo consider that should we return error when empty
+        Ok(input.text_contents())
     }
 }
-impl ExtractionArgs for TextExtractionMethod {
-    fn info(&self) -> ArgsInfo {
-        ArgsInfo
+impl Extractor for AttributeExtractor {
+    type Output = String;
+
+    fn extract<N: HtmlNodeRef>(&self, input: &N) -> Result<Self::Output, ExtractionError> {
+        input
+            .get_attribute(&self.attr)
+            .ok_or_else(|| ExtractionError::AttributeNotFound)
     }
 }
 
@@ -194,134 +196,43 @@ impl HtmlNodeRef for NodeRef {
     }
 }
 
-impl<N: HtmlNodeRef> ExtractionSource<N> for N {
-    fn info(&self) -> SourceInfo {
-        SourceInfo
-    }
-}
-impl<N: HtmlNodeRef, E: ExtractionSource<N>> ExtractionSource<N> for Option<E> {
-    fn info(&self) -> SourceInfo {
-        SourceInfo
-    }
-}
-impl<N: HtmlNodeRef, E: ExtractionSource<N>> ExtractionSource<N> for Vec<E> {
-    fn info(&self) -> SourceInfo {
-        SourceInfo
-    }
+pub trait Extractor {
+    type Output;
+    fn extract<N: HtmlNodeRef>(&self, input: &N) -> Result<Self::Output, ExtractionError>;
 }
 
-impl FromHtml for String {
-    type Source<N: HtmlNodeRef> = N;
-    type Args = TextExtractionMethod;
-
-    fn extract_from<N: HtmlNodeRef>(
-        source: &Self::Source<N>,
-        args: &Self::Args,
-    ) -> Result<Self, ExtractionError> {
-        args.extract(source)
-            .map_err(|e| ExtractionError::TextExtractionError(e))
-    }
-}
-
-impl<H: FromHtml> FromHtml for Vec<H> {
-    type Source<N: HtmlNodeRef> = Vec<H::Source<N>>;
-    type Args = H::Args;
-
-    fn extract_from<N: HtmlNodeRef>(
-        source: &Self::Source<N>,
-        args: &Self::Args,
-    ) -> Result<Self, ExtractionError> {
-        Ok(source
-            .into_iter()
-            .map(|a| H::extract_from(a, args).unwrap())
-            .collect())
-    }
-}
-
-impl<H: FromHtml> FromHtml for Option<H> {
-    type Source<N: HtmlNodeRef> = Option<H::Source<N>>;
-    type Args = H::Args;
-
-    fn extract_from<N: HtmlNodeRef>(
-        source: &Self::Source<N>,
-        args: &Self::Args,
-    ) -> Result<Self, ExtractionError> {
-        Ok(source.as_ref().map(|a| H::extract_from(&a, args).unwrap()))
-    }
-}
-
-#[derive(Debug)]
-pub struct ArgBuilder {
-    pub attr: Option<String>,
-}
-
-#[derive(Debug)]
-pub struct SourceExtractor<N: HtmlNodeRef> {
+pub struct SelectedNodes<N: HtmlNodeRef> {
     pub node: N,
-    pub selector: Option<String>,
+    pub selector: String,
 }
 
-impl<N: HtmlNodeRef> SourceAdjuster<N> for SourceExtractor<N> {
-    fn adjust_to(&self) -> Result<N, GetElementError> {
-        if let Some(selector) = &self.selector {
-            let mut elems = self
-                .node
-                .selected(selector)
-                .map_err(|_| GetElementError::Unexpected(format!("select failed")))?;
-            if elems.len() > 1 {
-                Err(GetElementError::TooManyElements)
-            } else {
-                elems.pop().ok_or_else(|| GetElementError::NoElementFound)
-            }
+impl<N: HtmlNodeRef> SourceAdjuster<N> for N {
+    fn adjust_to(self) -> Result<N, StructureUnmatched> {
+        Ok(self)
+    }
+}
+
+impl<N: HtmlNodeRef> SourceAdjuster<N> for Vec<N> {
+    fn adjust_to(mut self) -> Result<N, StructureUnmatched> {
+        if self.len() > 1 {
+            Err(StructureUnmatched::TooManyElements)
         } else {
-            Ok(self.node.clone())
+            self.pop().ok_or_else(|| StructureUnmatched::NoElementFound)
+        }
+    }
+}
+impl<N: HtmlNodeRef> SourceAdjuster<Option<N>> for Vec<N> {
+    fn adjust_to(mut self) -> Result<Option<N>, StructureUnmatched> {
+        if self.len() > 1 {
+            Err(StructureUnmatched::TooManyElements)
+        } else {
+            Ok(self.pop())
         }
     }
 }
 
-impl<N: HtmlNodeRef> SourceAdjuster<Option<N>> for SourceExtractor<N> {
-    fn adjust_to(&self) -> Result<Option<N>, GetElementError> {
-        if let Some(selector) = &self.selector {
-            let mut elems = self
-                .node
-                .selected(selector)
-                .map_err(|_| GetElementError::Unexpected(format!("select failed")))?;
-            if elems.len() > 1 {
-                Err(GetElementError::TooManyElements)
-            } else {
-                Ok(elems.pop())
-            }
-        } else {
-            Ok(Some(self.node.clone()))
-        }
-    }
-}
-
-impl<N: HtmlNodeRef> SourceAdjuster<Vec<N>> for SourceExtractor<N> {
-    fn adjust_to(&self) -> Result<Vec<N>, GetElementError> {
-        if let Some(selector) = &self.selector {
-            self.node
-                .selected(selector)
-                .map_err(|_| GetElementError::Unexpected(format!("select failed")))
-        } else {
-            // todo undefined behavior?
-            Ok(vec![self.node.clone()])
-        }
-    }
-}
-
-impl<'a> IntoArgs<StructExtractionArgs> for ArgBuilder {
-    fn build_args(&self) -> StructExtractionArgs {
-        StructExtractionArgs
-    }
-}
-
-impl<'a> IntoArgs<TextExtractionMethod> for ArgBuilder {
-    fn build_args(&self) -> TextExtractionMethod {
-        if let Some(attr) = &self.attr {
-            TextExtractionMethod::Attribute(attr.to_string())
-        } else {
-            TextExtractionMethod::TextContent
-        }
+impl<N: HtmlNodeRef> SourceAdjuster<Vec<N>> for Vec<N> {
+    fn adjust_to(self) -> Result<Vec<N>, StructureUnmatched> {
+        Ok(self)
     }
 }
