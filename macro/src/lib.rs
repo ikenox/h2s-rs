@@ -96,8 +96,20 @@ pub fn derive(input: TokenStream) -> TokenStream {
                             _ => quote!(_),
                         };
 
+                        let selector_str = select
+                            .as_ref()
+                            .map(|s| format!("`{s}`"))
+                            .unwrap_or_else(|| "".to_string());
+                        let attr_str = attr
+                            .as_ref()
+                            .map(|s| format!(" \"{s}\""))
+                            .unwrap_or_else(|| "".to_string());
+                        let ctx = format!("{selector_str}{attr_str}");
                         quote!(#ident: ::h2s::extract::<#type_hint,_,_>(#n, #extractor)
-                            .map_err(|a|a)?)
+                            .map_err(|e|::h2s::ExtractionError::Child{
+                                context: #ctx .to_string(),
+                                error: std::boxed::Box::new(e)
+                            })?)
                     },
                 );
 

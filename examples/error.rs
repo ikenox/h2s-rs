@@ -7,28 +7,23 @@ fn main() {
     pub struct Page {
         #[h2s(select = "html", attr = "lang")]
         lang: String,
-        #[h2s(select = "h1.blog-title")]
+        #[h2s(select = "h1.blog-title", text)]
         blog_title: String,
         #[h2s(select = ".articles > div", attr = "data-author")]
         article_authors: Vec<String>,
         #[h2s(select = ".articles > div")]
         articles: Vec<ArticleElem>,
     }
-
     #[derive(FromHtml, Debug, Eq, PartialEq)]
     pub struct ArticleElem {
-        #[h2s(attr = "data-author")]
+        #[h2s(attr = "data-author", text)]
         author: String,
-        #[h2s(select = "h2")]
+        #[h2s(select = "h2", text)]
         title: String,
-        #[h2s(select = "p.modified-date")]
+        #[h2s(select = "p.modified-date", text)]
         modified_date: Option<String>,
-        // #[h2s(select = "div > div > div")]
-        // txt: Option<String>,
-        // #[h2s(select = "div > div", attr = "data-foobar")]
-        // foobar: Option<String>,
         #[h2s(select = ".foo > div", attr = "data-foobar")]
-        foobar2: String,
+        foobar: String,
     }
 
     let html = r#"

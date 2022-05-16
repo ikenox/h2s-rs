@@ -91,6 +91,7 @@ pub enum ExtractionError {
         error: Box<ExtractionError>,
     },
 }
+
 #[derive(Debug)]
 pub enum StructureUnmatched {
     NoElementFound,

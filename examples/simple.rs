@@ -22,29 +22,10 @@ fn main() {
         title: String,
         #[h2s(select = "p.modified-date", text)]
         modified_date: Option<String>,
-        // #[h2s(select = "div > div > div")]
-        // txt: Option<String>,
-        // #[h2s(select = "div > div", attr = "data-foobar")]
-        // foobar: Option<String>,
         #[h2s(select = ".foo > div", attr = "data-foobar")]
-        foobar2: Option<String>,
+        foobar: Option<String>,
+        // todo Option<Elem>
     }
-
-    // #[derive(FromHtml, Debug, Eq, PartialEq)]
-    // pub struct ArticleElem {
-    //     #[h2s(method(attr = "data-author"))]
-    //     author: String,
-    //     #[h2s(select = "h2", method(text))]
-    //     title: String,
-    //     #[h2s(select = "p.modified-date", method(text))]
-    //     modified_date: Option<String>,
-    //     // #[h2s(select = "div > div > div")]
-    //     // txt: Option<String>,
-    //     // #[h2s(select = "div > div", attr = "data-foobar")]
-    //     // foobar: Option<String>,
-    //     #[h2s(select = ".foo > div", method(attr("data-foobar")))]
-    //     foobar2: Option<String>,
-    // }
 
     let html = r#"
 <!DOCTYPE html>
