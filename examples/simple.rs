@@ -29,7 +29,6 @@ fn main() {
         modified_date: Option<String>,
         #[h2s(select = ".foo > div", extract(attr = "data-foobar"))]
         foobar: Option<String>,
-        // todo Option<Elem>
     }
 
     #[derive(FromHtml, Debug, Eq, PartialEq)]
