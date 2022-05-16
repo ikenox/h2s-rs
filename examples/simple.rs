@@ -13,6 +13,11 @@ fn main() {
         article_authors: Vec<String>,
         #[h2s(select = ".articles > div")]
         articles: Vec<ArticleElem>,
+
+        #[h2s(select = "footer")]
+        footer_maybe: Option<Footer>,
+        #[h2s(select = "footer")]
+        footer: Footer,
     }
     #[derive(FromHtml, Debug, Eq, PartialEq)]
     pub struct ArticleElem {
@@ -25,6 +30,12 @@ fn main() {
         #[h2s(select = ".foo > div", extract(attr = "data-foobar"))]
         foobar: Option<String>,
         // todo Option<Elem>
+    }
+
+    #[derive(FromHtml, Debug, Eq, PartialEq)]
+    pub struct Footer {
+        #[h2s(extract = "text")]
+        txt: String,
     }
 
     let html = r#"
@@ -45,6 +56,7 @@ fn main() {
         <div class="foo"><div data-foobar="aiu">aaaaaa</div></div>
     </div>
 </div>
+<footer>footer</footer>
 </body>
 </html>
     "#;
