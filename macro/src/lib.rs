@@ -9,7 +9,7 @@ use syn::{parse_macro_input, PathArguments, PathSegment, Type, TypePath};
 pub fn derive(input: TokenStream) -> TokenStream {
     #[derive(Debug, FromDeriveInput)]
     #[darling(attributes(h2s), supports(struct_any))]
-    pub struct H2sStructReceiver {
+    pub struct FromHtmlStructReceiver {
         ident: syn::Ident,
         data: darling::ast::Data<(), H2sFieldReceiver>,
     }
@@ -19,12 +19,16 @@ pub fn derive(input: TokenStream) -> TokenStream {
         ty: syn::Type,
         ident: Option<syn::Ident>,
         select: Option<String>,
-        attr: Option<String>,
-        #[darling(default)]
-        text: bool,
+        extract: Option<H2sExtractionMethod>,
+    }
+    #[derive(Debug, FromMeta)]
+    #[darling(rename_all = "snake_case")]
+    pub enum H2sExtractionMethod {
+        Attr(String),
+        Text,
     }
 
-    impl ToTokens for H2sStructReceiver {
+    impl ToTokens for FromHtmlStructReceiver {
         fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
             let Self {
                 ref ident,
@@ -48,8 +52,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
                          ty,
                          ident,
                          select,
-                         attr,
-                         text,
+                         extract,
                      }| {
                         // all fields must be named
                         let ident = ident
@@ -67,12 +70,14 @@ pub fn derive(input: TokenStream) -> TokenStream {
                             }
                             None => quote!(input.clone()),
                         };
-                        let extractor = if let Some(attr) = attr {
-                            quote!(::h2s::AttributeExtractor{attr: #attr .to_string()})
-                        } else if *text {
-                            quote!(::h2s::TextContentExtractor)
-                        } else {
-                            quote!(::h2s::StructExtractor::new())
+                        let extractor = match extract {
+                            Some(H2sExtractionMethod::Attr(attr)) => {
+                                quote!(::h2s::AttributeExtractor{attr: #attr .to_string()})
+                            }
+                            Some(H2sExtractionMethod::Text) => {
+                                quote!(::h2s::TextContentExtractor)
+                            }
+                            None => quote!(::h2s::StructExtractor::new()),
                         };
 
                         // FIXME naive implementation to build type-hint quote
@@ -100,9 +105,9 @@ pub fn derive(input: TokenStream) -> TokenStream {
                             .as_ref()
                             .map(|s| format!("`{s}`"))
                             .unwrap_or_else(|| "".to_string());
-                        let attr_str = attr
+                        let attr_str = extract
                             .as_ref()
-                            .map(|s| format!(" \"{s}\""))
+                            .map(|s| format!("{:?}", s))
                             .unwrap_or_else(|| "".to_string());
                         let ctx = format!("{selector_str}{attr_str}");
                         quote!(#ident: ::h2s::extract::<#type_hint,_,_>(#n, #extractor)
@@ -127,7 +132,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
         }
     }
 
-    let struct_receiver: H2sStructReceiver =
-        H2sStructReceiver::from_derive_input(&parse_macro_input!(input)).unwrap();
+    let struct_receiver: FromHtmlStructReceiver =
+        FromHtmlStructReceiver::from_derive_input(&parse_macro_input!(input)).unwrap();
     quote!(#struct_receiver).into()
 }
