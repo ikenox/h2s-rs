@@ -6,10 +6,10 @@ pub mod utils;
 use std::fmt::{Debug, Display, Formatter};
 
 pub trait FromHtml: Sized {
-    type Source<N: HtmlNodeRef>;
+    type Source<N: HtmlElementRef>;
     type Args;
 
-    fn from_html<N: HtmlNodeRef>(
+    fn from_html<N: HtmlElementRef>(
         source: &Self::Source<N>,
         args: &Self::Args,
     ) -> Result<Self, ExtractionError>;
@@ -61,10 +61,10 @@ impl<N> StructureAdjuster<Option<N>> for Vec<N> {
 }
 
 impl FromHtml for String {
-    type Source<N: HtmlNodeRef> = N;
+    type Source<N: HtmlElementRef> = N;
     type Args = StringExtractionMethod;
 
-    fn from_html<N: HtmlNodeRef>(
+    fn from_html<N: HtmlElementRef>(
         source: &Self::Source<N>,
         args: &Self::Args,
     ) -> Result<Self, ExtractionError> {
@@ -79,10 +79,10 @@ impl FromHtml for String {
 }
 
 impl<T: FromHtml> FromHtml for Vec<T> {
-    type Source<N: HtmlNodeRef> = Vec<T::Source<N>>;
+    type Source<N: HtmlElementRef> = Vec<T::Source<N>>;
     type Args = T::Args;
 
-    fn from_html<N: HtmlNodeRef>(
+    fn from_html<N: HtmlElementRef>(
         source: &Self::Source<N>,
         args: &Self::Args,
     ) -> Result<Self, ExtractionError> {
@@ -108,10 +108,10 @@ impl<T: FromHtml> FromHtml for Vec<T> {
 }
 
 impl<T: FromHtml> FromHtml for Option<T> {
-    type Source<N: HtmlNodeRef> = Option<T::Source<N>>;
+    type Source<N: HtmlElementRef> = Option<T::Source<N>>;
     type Args = T::Args;
 
-    fn from_html<N: HtmlNodeRef>(
+    fn from_html<N: HtmlElementRef>(
         source: &Self::Source<N>,
         args: &Self::Args,
     ) -> Result<Self, ExtractionError> {
@@ -126,7 +126,7 @@ pub trait Selector: Sized {
 }
 
 // todo not force to clone?
-pub trait HtmlNodeRef: Sized + Clone {
+pub trait HtmlElementRef: Sized + Clone {
     type Selector: Selector;
     fn select(&self, sel: &Self::Selector) -> Vec<Self>;
     fn text_contents(&self) -> String;

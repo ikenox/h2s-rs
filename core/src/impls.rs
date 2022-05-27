@@ -1,4 +1,4 @@
-use crate::{HtmlNodeRef, Selector};
+use crate::{HtmlElementRef, Selector};
 
 impl Selector for scraper::Selector {
     fn parse<S: AsRef<str>>(s: S) -> Result<Self, String> {
@@ -7,7 +7,7 @@ impl Selector for scraper::Selector {
     }
 }
 
-impl<'a> HtmlNodeRef for scraper::ElementRef<'a> {
+impl<'a> HtmlElementRef for scraper::ElementRef<'a> {
     type Selector = scraper::Selector;
 
     fn select(&self, sel: &Self::Selector) -> Vec<Self> {

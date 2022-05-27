@@ -106,9 +106,9 @@ pub fn derive(input: TokenStream) -> TokenStream {
 
             tokens.extend(quote! {
                 impl ::h2s::FromHtml for #ident {
-                    type Source<N: ::h2s::HtmlNodeRef> = N;
+                    type Source<N: ::h2s::HtmlElementRef> = N;
                     type Args = ();
-                    fn from_html<N: ::h2s::HtmlNodeRef>(
+                    fn from_html<N: ::h2s::HtmlElementRef>(
                         source: &Self::Source<N>,
                         args: &Self::Args,
                     ) -> Result<Self, ::h2s::ExtractionError> {
