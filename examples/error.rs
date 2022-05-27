@@ -14,7 +14,6 @@ fn main() {
         article_authors: Vec<String>,
         #[h2s(select = ".articles > div")]
         articles: Vec<ArticleElem>,
-
         #[h2s(select = "footer")]
         footer_maybe: Option<Footer>,
         #[h2s(select = "footer")]
@@ -36,7 +35,7 @@ fn main() {
 
     #[derive(FromHtml, Debug, Eq, PartialEq)]
     pub struct Footer {
-        #[h2s()]
+        #[h2s]
         txt: String,
     }
 
@@ -65,9 +64,7 @@ fn main() {
 </html>
     "#;
 
-    let doc = Html::parse_document(html);
-
-    let res = Page::from_html(&doc.root_element(), &());
+    let res = h2s::utils::parse::<Page>(html);
     match res {
         Ok(p) => {
             println!("{:#?}", p);

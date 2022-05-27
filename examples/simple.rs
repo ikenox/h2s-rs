@@ -33,7 +33,7 @@ fn main() {
 
     #[derive(FromHtml, Debug, Eq, PartialEq)]
     pub struct Footer {
-        #[h2s()]
+        #[h2s]
         txt: String,
     }
 
@@ -59,9 +59,7 @@ fn main() {
 </html>
     "#;
 
-    let doc = Html::parse_document(html);
-
-    let res = Page::from_html(&doc.root_element(), &());
+    let res = h2s::utils::parse::<Page>(html);
     match res {
         Ok(p) => {
             println!("{:#?}", p);

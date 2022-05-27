@@ -5,12 +5,12 @@ pub mod utils;
 
 use std::fmt::{Debug, Display, Formatter};
 
-pub trait FromHtml<A>: Sized {
+pub trait FromHtml<'a, A: 'a>: Sized {
     type Source<N: HtmlElementRef>;
 
     fn from_html<N: HtmlElementRef>(
         source: &Self::Source<N>,
-        args: &A,
+        args: A,
     ) -> Result<Self, ExtractionError>;
 }
 
@@ -72,23 +72,23 @@ impl<N> StructureAdjuster<Option<N>> for Vec<N> {
 }
 pub struct ExtractAttribute(pub String);
 
-impl FromHtml<()> for String {
+impl<'a> FromHtml<'a, ()> for String {
     type Source<N: HtmlElementRef> = N;
 
     fn from_html<N: HtmlElementRef>(
         source: &Self::Source<N>,
-        args: &(),
+        args: (),
     ) -> Result<Self, ExtractionError> {
         Ok(source.text_contents())
     }
 }
 
-impl FromHtml<ExtractAttribute> for String {
+impl<'a> FromHtml<'a, &'a ExtractAttribute> for String {
     type Source<N: HtmlElementRef> = N;
 
     fn from_html<N: HtmlElementRef>(
         source: &Self::Source<N>,
-        args: &ExtractAttribute,
+        args: &'a ExtractAttribute,
     ) -> Result<Self, ExtractionError> {
         source
             .get_attribute(&args.0)
@@ -96,12 +96,12 @@ impl FromHtml<ExtractAttribute> for String {
             .ok_or_else(|| ExtractionError::AttributeNotFound(args.0.clone()))
     }
 }
-impl<B, T: FromHtml<B>, const A: usize> FromHtml<B> for [T; A] {
+impl<'a, B: Copy + 'a, T: FromHtml<'a, B>, const A: usize> FromHtml<'a, B> for [T; A] {
     type Source<N: HtmlElementRef> = [T::Source<N>; A];
 
     fn from_html<N: HtmlElementRef>(
         source: &Self::Source<N>,
-        args: &B,
+        args: B,
     ) -> Result<Self, ExtractionError> {
         let v = source
             .iter()
@@ -128,18 +128,18 @@ impl<B, T: FromHtml<B>, const A: usize> FromHtml<B> for [T; A] {
     }
 }
 
-impl<A, T: FromHtml<A>> FromHtml<A> for Vec<T> {
+impl<'a, A: Copy + 'a, T: FromHtml<'a, A>> FromHtml<'a, A> for Vec<T> {
     type Source<N: HtmlElementRef> = Vec<T::Source<N>>;
 
     fn from_html<N: HtmlElementRef>(
         source: &Self::Source<N>,
-        args: &A,
+        args: A,
     ) -> Result<Self, ExtractionError> {
         source
             .into_iter()
             .enumerate()
             .map(|(i, n)| {
-                T::from_html(n, args).map_err(|e| ExtractionError::Child {
+                T::from_html(n, args.clone()).map_err(|e| ExtractionError::Child {
                     context: Position::Index(i),
                     error: Box::new(e),
                 })
@@ -156,12 +156,12 @@ impl<A, T: FromHtml<A>> FromHtml<A> for Vec<T> {
     }
 }
 
-impl<A, T: FromHtml<A>> FromHtml<A> for Option<T> {
+impl<'a, A: 'a, T: FromHtml<'a, A>> FromHtml<'a, A> for Option<T> {
     type Source<N: HtmlElementRef> = Option<T::Source<N>>;
 
     fn from_html<N: HtmlElementRef>(
         source: &Self::Source<N>,
-        args: &A,
+        args: A,
     ) -> Result<Self, ExtractionError> {
         source
             .as_ref()
@@ -181,7 +181,7 @@ pub trait HtmlElementRef: Sized + Clone {
     fn get_attribute<S: AsRef<str>>(&self, attr: S) -> Option<&str>;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum ExtractionError {
     Unexpected(String),
     StructureUnmatched(StructureUnmatched),
@@ -212,7 +212,7 @@ impl Display for ExtractionError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum Position {
     Index(usize),
     Struct {
@@ -241,7 +241,7 @@ impl Display for Position {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct StructureUnmatched(String);
 
 impl Display for StructureUnmatched {

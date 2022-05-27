@@ -14,6 +14,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
         ident: syn::Ident,
         data: darling::ast::Data<(), H2sFieldReceiver>,
     }
+
     #[derive(Debug, FromField)]
     #[darling(attributes(h2s))]
     pub struct H2sFieldReceiver {
@@ -22,12 +23,6 @@ pub fn derive(input: TokenStream) -> TokenStream {
         select: Option<String>,
         attr: Option<String>,
     }
-    // #[derive(Debug, FromMeta)]
-    // #[darling(rename_all = "snake_case")]
-    // pub enum H2sExtractionMethod {
-    //     Attr(String),
-    //     Text,
-    // }
 
     impl ToTokens for FromHtmlStructReceiver {
         fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
@@ -78,14 +73,14 @@ pub fn derive(input: TokenStream) -> TokenStream {
                         };
                         let args = match attr {
                             Some(attr) => {
-                                quote!(::h2s::ExtractAttribute(#attr .to_string()))
+                                quote!(& ::h2s::ExtractAttribute(#attr .to_string()))
                             }
                             None => quote!(()),
                         };
 
                         let selector = select.as_ref().map(|a|quote!(Some(#a .to_string()))).unwrap_or_else(||quote!(None));
                         quote!(
-                            #ident: ::h2s::macro_utils::adjust_and_parse::<N,_,_,_>(#source, &#args)
+                            #ident: ::h2s::macro_utils::adjust_and_parse::<N,_,_,_>(#source, #args)
                                         .map_err(|e| ::h2s::ExtractionError::Child{
                                             context: ::h2s::Position::Struct{selector: #selector, field_name: #field_name .to_string()},
                                             error: Box::new(e),
@@ -95,11 +90,11 @@ pub fn derive(input: TokenStream) -> TokenStream {
                 );
 
             tokens.extend(quote! {
-                impl ::h2s::FromHtml<()> for #ident {
+                impl <'a> ::h2s::FromHtml<'a, ()> for #ident {
                     type Source<N: ::h2s::HtmlElementRef> = N;
                     fn from_html<N: ::h2s::HtmlElementRef>(
                         source: &Self::Source<N>,
-                        args: &(),
+                        args: (),
                     ) -> Result<Self, ::h2s::ExtractionError> {
                         use ::h2s::Selector;
                         Ok(Self{

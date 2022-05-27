@@ -3,13 +3,14 @@ use std::fmt::{Display, Formatter};
 use crate::{ExtractionError, FromHtml, HtmlElementRef, Position, StructureAdjuster};
 
 pub fn adjust_and_parse<
+    'a,
     N: HtmlElementRef,
-    A,
-    H: FromHtml<A>,
+    A: 'a,
+    H: FromHtml<'a, A>,
     S: StructureAdjuster<H::Source<N>>,
 >(
     source: S,
-    args: &A,
+    args: A,
 ) -> Result<H, ExtractionError> {
     source
         .try_adjust()
