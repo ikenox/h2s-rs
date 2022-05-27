@@ -1,5 +1,5 @@
 #![feature(generic_associated_types)]
-pub mod impls;
+mod impls;
 pub mod macro_utils;
 pub mod utils;
 
