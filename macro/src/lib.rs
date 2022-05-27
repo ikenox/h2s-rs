@@ -94,10 +94,10 @@ pub fn derive(input: TokenStream) -> TokenStream {
                         };
                         quote!(
                             #ident: ::h2s::macro_utils::adjust_and_parse::<_,N,_>(#source, &#args)
-                                .map_err(|e| ::h2s::ExtractionError::Child{
-                                    context: ::h2s::Position::Selector(Some( #sel .to_string() )),
-                                    error: Box::new(e),
-                                })
+                                        .map_err(|e| ::h2s::ExtractionError::Child{
+                                            context: ::h2s::Position::Selector(Some( #sel .to_string() )),
+                                            error: Box::new(e),
+                                        })
                         ?)
                     },
                 );

@@ -6,10 +6,8 @@ pub fn adjust_and_parse<H: FromHtml, N: HtmlNodeRef, S: StructureAdjuster<H::Sou
     source: S,
     args: &H::Args,
 ) -> Result<H, ExtractionError> {
-    H::from_html(
-        &source
-            .try_adjust()
-            .map_err(ExtractionError::StructureUnmatched)?,
-        args,
-    )
+    source
+        .try_adjust()
+        .map_err(ExtractionError::StructureUnmatched)
+        .and_then(|s| H::from_html(&s, args))
 }
