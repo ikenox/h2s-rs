@@ -33,13 +33,13 @@ impl<N> StructureAdjuster<N> for N {
 impl<N> StructureAdjuster<N> for Vec<N> {
     fn try_adjust(mut self) -> Result<N, StructureUnmatched> {
         if self.len() > 1 {
-            Err(StructureUnmatched::TooManyElements(format!(
+            Err(StructureUnmatched(format!(
                 "expected exactly one element, but found {} elements",
                 self.len()
             )))
         } else {
             self.pop().ok_or_else(|| {
-                StructureUnmatched::NoElementFound(format!(
+                StructureUnmatched(format!(
                     "expected exactly one element, but no element found",
                 ))
             })
@@ -50,7 +50,7 @@ impl<N> StructureAdjuster<N> for Vec<N> {
 impl<N> StructureAdjuster<Option<N>> for Vec<N> {
     fn try_adjust(mut self) -> Result<Option<N>, StructureUnmatched> {
         if self.len() > 1 {
-            Err(StructureUnmatched::TooManyElements(format!(
+            Err(StructureUnmatched(format!(
                 "expected at most one element, but found {} elements",
                 self.len()
             )))
@@ -173,17 +173,11 @@ impl Display for Position {
 }
 
 #[derive(Debug)]
-pub enum StructureUnmatched {
-    NoElementFound(String),
-    TooManyElements(String),
-}
+pub struct StructureUnmatched(String);
 
 impl Display for StructureUnmatched {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match &self {
-            StructureUnmatched::NoElementFound(s) => write!(f, "no element found: {s}"),
-            StructureUnmatched::TooManyElements(s) => write!(f, "too many elements: {s}"),
-        }
+        write!(f, "structure is different from expected: {}", self.0)
     }
 }
 
