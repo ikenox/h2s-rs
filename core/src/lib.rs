@@ -90,14 +90,35 @@ impl FromHtml for String {
     }
 }
 impl<T: FromHtml, const A: usize> FromHtml for [T; A] {
-    type Source<N: HtmlElementRef> = [T; A];
+    type Source<N: HtmlElementRef> = [T::Source<N>; A];
     type Args = T::Args;
 
     fn from_html<N: HtmlElementRef>(
         source: &Self::Source<N>,
         args: &Self::Args,
     ) -> Result<Self, ExtractionError> {
-        todo!()
+        let v = source
+            .iter()
+            .enumerate()
+            .map(|(i, n)| {
+                T::from_html(n, args).map_err(|e| ExtractionError::Child {
+                    context: Position::Index(i),
+                    error: Box::new(e),
+                })
+            })
+            .fold(Ok(vec![]), |acc, res| {
+                acc.and_then(|mut list| {
+                    res.map(|val| {
+                        list.push(val);
+                        list
+                    })
+                })
+            })?;
+
+        // this conversion should never fail
+        v.try_into().map_err(|_| {
+            ExtractionError::Unexpected(format!("vec to array conversion unexpectedly failed"))
+        })
     }
 }
 
