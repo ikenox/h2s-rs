@@ -8,14 +8,14 @@ fn main() {
     pub struct Page {
         #[h2s(extract(attr = "lang"))]
         lang: String,
-        #[h2s(select = "head", extract(attr = "foo"))]
-        foo: String,
         #[h2s(select = "h1.blog-title", extract = "text")]
         blog_title: String,
         #[h2s(select = ".articles > div", extract(attr = "data-author"))]
         article_authors: Vec<String>,
         #[h2s(select = ".articles > div")]
         articles: Vec<ArticleElem>,
+        #[h2s(select = ".articles > div")]
+        articles_array: [ArticleElem; 3],
         #[h2s(select = "footer")]
         footer_maybe: Option<Footer>,
         #[h2s(select = "footer")]
@@ -42,7 +42,6 @@ fn main() {
     let html = r#"
 <!DOCTYPE html>
 <html lang="en">
-<head foo="bar"></head>
 <body>
 <h1 class="blog-title">My tech blog</h1>
 <div class="articles">
@@ -55,7 +54,6 @@ fn main() {
     </div>
     <div data-author="Ikeno">
         <h2>article3</h2>
-        <div class="foo"><div data-foobar="aiu">aaaaaa</div></div>
     </div>
 </div>
 <footer>footer</footer>

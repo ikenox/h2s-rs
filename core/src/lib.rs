@@ -188,6 +188,26 @@ pub enum ExtractionError {
     },
 }
 
+impl Display for ExtractionError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        // todo
+        match self {
+            Self::StructureUnmatched(e) => {
+                write!(f, "structure unmatched: {e}")
+            }
+            Self::AttributeNotFound(attr) => {
+                write!(f, "attribute `{attr}` is not found")
+            }
+            Self::Child { context, error } => {
+                // todo
+                // write!(f, "{source} $ {args} -> {error}")
+                write!(f, "{context} -> {error}")
+            }
+            Self::Unexpected(detail) => write!(f, "unexpected error: {}", detail),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub enum Position {
     Index(usize),
@@ -196,6 +216,7 @@ pub enum Position {
         field_name: String,
     },
 }
+
 impl Display for Position {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match &self {
@@ -222,25 +243,5 @@ pub struct StructureUnmatched(String);
 impl Display for StructureUnmatched {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "structure is different from expected: {}", self.0)
-    }
-}
-
-impl Display for ExtractionError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        // todo
-        match self {
-            Self::StructureUnmatched(e) => {
-                write!(f, "structure unmatched: {e}")
-            }
-            Self::AttributeNotFound(attr) => {
-                write!(f, "attribute `{attr}` is not found")
-            }
-            Self::Child { context, error } => {
-                // todo
-                // write!(f, "{source} $ {args} -> {error}")
-                write!(f, "{context} -> {error}")
-            }
-            Self::Unexpected(detail) => write!(f, "unexpected error: {}", detail),
-        }
     }
 }
