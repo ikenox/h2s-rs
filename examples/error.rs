@@ -6,11 +6,11 @@ use scraper::Html;
 fn main() {
     #[derive(FromHtml, Debug, Eq, PartialEq)]
     pub struct Page {
-        // #[h2s(select = "html", extract(attr = "lang"))]
-        // lang: String,
-        #[h2s(select = "h1.blog-title", extract = "text")]
+        #[h2s(attr = "lang")]
+        lang: String,
+        #[h2s(select = "h1.blog-title")]
         blog_title: String,
-        #[h2s(select = ".articles > div", extract(attr = "data-author"))]
+        #[h2s(select = ".articles > div", attr = "data-author")]
         article_authors: Vec<String>,
         #[h2s(select = ".articles > div")]
         articles: Vec<ArticleElem>,
@@ -22,21 +22,21 @@ fn main() {
     }
     #[derive(FromHtml, Debug, Eq, PartialEq)]
     pub struct ArticleElem {
-        #[h2s(extract(attr = "data-author"))]
+        #[h2s(attr = "data-author")]
         author: String,
-        #[h2s(select = "h2", extract = "text")]
+        #[h2s(select = "h2")]
         title: String,
-        #[h2s(select = "p.modified-date", extract = "text")]
+        #[h2s(select = "p.modified-date")]
         modified_date: Option<String>,
-        #[h2s(select = ".foo > div", extract(attr = "data-foobar"))]
+        #[h2s(select = ".foo > div", attr = "data-foobar")]
         foobar: Option<String>,
-        #[h2s(select = "p.summary", extract = "text")]
+        #[h2s(select = "p.summary")]
         summary: String,
     }
 
     #[derive(FromHtml, Debug, Eq, PartialEq)]
     pub struct Footer {
-        #[h2s(extract = "text")]
+        #[h2s()]
         txt: String,
     }
 
