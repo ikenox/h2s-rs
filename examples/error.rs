@@ -1,6 +1,7 @@
 #![feature(generic_associated_types)]
 
 use h2s::FromHtml;
+use scraper::Html;
 
 fn main() {
     #[derive(FromHtml, Debug, Eq, PartialEq)]
@@ -64,7 +65,9 @@ fn main() {
 </html>
     "#;
 
-    let res = h2s::utils::extract_from_html::<Page>(html);
+    let doc = Html::parse_document(html);
+
+    let res = Page::from_html(&doc.root_element(), &());
     match res {
         Ok(p) => {
             println!("{:#?}", p);
