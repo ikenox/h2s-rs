@@ -161,9 +161,9 @@ impl Display for Position {
                 field_name,
             } => write!(
                 f,
-                "{field_name} {}",
+                "({field_name}) {}",
                 if let Some(s) = selector {
-                    format!("`{s}`")
+                    format!("@ `{s}`")
                 } else {
                     "".to_string()
                 }
