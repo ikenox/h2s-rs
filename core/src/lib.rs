@@ -5,13 +5,12 @@ pub mod utils;
 
 use std::fmt::{Debug, Display, Formatter};
 
-pub trait FromHtml: Sized {
+pub trait FromHtml<A>: Sized {
     type Source<N: HtmlElementRef>;
-    type Args;
 
     fn from_html<N: HtmlElementRef>(
         source: &Self::Source<N>,
-        args: &Self::Args,
+        args: &A,
     ) -> Result<Self, ExtractionError>;
 }
 
@@ -71,31 +70,38 @@ impl<N> StructureAdjuster<Option<N>> for Vec<N> {
         }
     }
 }
+pub struct ExtractAttribute(pub String);
 
-impl FromHtml for String {
+impl FromHtml<()> for String {
     type Source<N: HtmlElementRef> = N;
-    type Args = StringExtractionMethod;
 
     fn from_html<N: HtmlElementRef>(
         source: &Self::Source<N>,
-        args: &Self::Args,
+        args: &(),
     ) -> Result<Self, ExtractionError> {
-        match args {
-            StringExtractionMethod::Text => Ok(source.text_contents()),
-            StringExtractionMethod::Attribute(attr) => source
-                .get_attribute(attr)
-                .map(|s| s.to_string())
-                .ok_or_else(|| ExtractionError::AttributeNotFound(attr.clone())),
-        }
+        Ok(source.text_contents())
     }
 }
-impl<T: FromHtml, const A: usize> FromHtml for [T; A] {
-    type Source<N: HtmlElementRef> = [T::Source<N>; A];
-    type Args = T::Args;
+
+impl FromHtml<ExtractAttribute> for String {
+    type Source<N: HtmlElementRef> = N;
 
     fn from_html<N: HtmlElementRef>(
         source: &Self::Source<N>,
-        args: &Self::Args,
+        args: &ExtractAttribute,
+    ) -> Result<Self, ExtractionError> {
+        source
+            .get_attribute(&args.0)
+            .map(|s| s.to_string())
+            .ok_or_else(|| ExtractionError::AttributeNotFound(args.0.clone()))
+    }
+}
+impl<B, T: FromHtml<B>, const A: usize> FromHtml<B> for [T; A] {
+    type Source<N: HtmlElementRef> = [T::Source<N>; A];
+
+    fn from_html<N: HtmlElementRef>(
+        source: &Self::Source<N>,
+        args: &B,
     ) -> Result<Self, ExtractionError> {
         let v = source
             .iter()
@@ -122,13 +128,12 @@ impl<T: FromHtml, const A: usize> FromHtml for [T; A] {
     }
 }
 
-impl<T: FromHtml> FromHtml for Vec<T> {
+impl<A, T: FromHtml<A>> FromHtml<A> for Vec<T> {
     type Source<N: HtmlElementRef> = Vec<T::Source<N>>;
-    type Args = T::Args;
 
     fn from_html<N: HtmlElementRef>(
         source: &Self::Source<N>,
-        args: &Self::Args,
+        args: &A,
     ) -> Result<Self, ExtractionError> {
         source
             .into_iter()
@@ -151,13 +156,12 @@ impl<T: FromHtml> FromHtml for Vec<T> {
     }
 }
 
-impl<T: FromHtml> FromHtml for Option<T> {
+impl<A, T: FromHtml<A>> FromHtml<A> for Option<T> {
     type Source<N: HtmlElementRef> = Option<T::Source<N>>;
-    type Args = T::Args;
 
     fn from_html<N: HtmlElementRef>(
         source: &Self::Source<N>,
-        args: &Self::Args,
+        args: &A,
     ) -> Result<Self, ExtractionError> {
         source
             .as_ref()

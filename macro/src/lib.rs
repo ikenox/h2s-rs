@@ -20,22 +20,14 @@ pub fn derive(input: TokenStream) -> TokenStream {
         ty: syn::Type,
         ident: Option<syn::Ident>,
         select: Option<String>,
-        extract: Option<H2sExtractionMethod>,
+        attr: Option<String>,
     }
-    #[derive(Debug, FromMeta)]
-    #[darling(rename_all = "snake_case")]
-    pub enum H2sExtractionMethod {
-        Attr(String),
-        Text,
-    }
-    impl H2sExtractionMethod {
-        fn desc(&self) -> String {
-            match self {
-                H2sExtractionMethod::Attr(a) => format!("attr=\"{a}\""),
-                H2sExtractionMethod::Text => format!("text"),
-            }
-        }
-    }
+    // #[derive(Debug, FromMeta)]
+    // #[darling(rename_all = "snake_case")]
+    // pub enum H2sExtractionMethod {
+    //     Attr(String),
+    //     Text,
+    // }
 
     impl ToTokens for FromHtmlStructReceiver {
         fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
@@ -61,7 +53,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
                          ty,
                          ident,
                          select,
-                         extract,
+                         attr,
                      }| {
                         // all fields must be named
                         let ident:&syn::Ident = ident
@@ -84,19 +76,16 @@ pub fn derive(input: TokenStream) -> TokenStream {
                             }
                             None => quote!(source.clone()),
                         };
-                        let args = match extract {
-                            Some(H2sExtractionMethod::Attr(attr)) => {
-                                quote!(::h2s::StringExtractionMethod::Attribute(#attr .to_string()))
-                            }
-                            Some(H2sExtractionMethod::Text) => {
-                                quote!(::h2s::StringExtractionMethod::Text)
+                        let args = match attr {
+                            Some(attr) => {
+                                quote!(::h2s::ExtractAttribute(#attr .to_string()))
                             }
                             None => quote!(()),
                         };
 
                         let selector = select.as_ref().map(|a|quote!(Some(#a .to_string()))).unwrap_or_else(||quote!(None));
                         quote!(
-                            #ident: ::h2s::macro_utils::adjust_and_parse::<_,N,_>(#source, &#args)
+                            #ident: ::h2s::macro_utils::adjust_and_parse::<N,_,_,_>(#source, &#args)
                                         .map_err(|e| ::h2s::ExtractionError::Child{
                                             context: ::h2s::Position::Struct{selector: #selector, field_name: #field_name .to_string()},
                                             error: Box::new(e),
@@ -106,12 +95,11 @@ pub fn derive(input: TokenStream) -> TokenStream {
                 );
 
             tokens.extend(quote! {
-                impl ::h2s::FromHtml for #ident {
+                impl ::h2s::FromHtml<()> for #ident {
                     type Source<N: ::h2s::HtmlElementRef> = N;
-                    type Args = ();
                     fn from_html<N: ::h2s::HtmlElementRef>(
                         source: &Self::Source<N>,
-                        args: &Self::Args,
+                        args: &(),
                     ) -> Result<Self, ::h2s::ExtractionError> {
                         use ::h2s::Selector;
                         Ok(Self{
