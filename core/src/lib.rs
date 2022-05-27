@@ -107,12 +107,7 @@ impl<T: FromHtml> FromHtml for Option<T> {
     ) -> Result<Self, ExtractionError> {
         source
             .as_ref()
-            .map(|n| {
-                T::from_html(n, args).map_err(|e| ExtractionError::Child {
-                    context: Position::Optional,
-                    error: Box::new(e),
-                })
-            })
+            .map(|n| T::from_html(n, args))
             .map_or(Ok(None), |v| v.map(Some))
     }
 }
@@ -142,17 +137,27 @@ pub enum ExtractionError {
 #[derive(Debug)]
 pub enum Position {
     Index(usize),
-    Selector(Option<String>),
-    Optional,
-    None,
+    Struct {
+        selector: Option<String>,
+        field_name: String,
+    },
 }
 impl Display for Position {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match &self {
             Position::Index(i) => write!(f, "[{i}]"),
-            Position::Selector(select) => write!(f, "{:?}", select),
-            Position::Optional => write!(f, "[optional]",),
-            Position::None => write!(f, ""),
+            Position::Struct {
+                selector,
+                field_name,
+            } => write!(
+                f,
+                "{field_name} {}",
+                if let Some(s) = selector {
+                    format!("`{s}`")
+                } else {
+                    "".to_string()
+                }
+            ),
         }
     }
 }
@@ -179,7 +184,7 @@ impl Display for ExtractionError {
         // todo
         match self {
             Self::StructureUnmatched(e) => {
-                write!(f, "failed to get element: {e}")
+                write!(f, "structure unmatched: {e}")
             }
             Self::AttributeNotFound(attr) => {
                 write!(f, "attribute `{attr}` is not found")

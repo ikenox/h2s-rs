@@ -64,11 +64,11 @@ pub fn derive(input: TokenStream) -> TokenStream {
                          extract,
                      }| {
                         // all fields must be named
-                        let ident = ident
+                        let ident:&syn::Ident = ident
                             .as_ref()
-                            .expect(&format!("all struct fields for h2s must be named."));
+                            .expect("all struct fields for h2s must be named.");
+                        let field_name = ident.to_string();
 
-                        let sel = select.as_ref().map(|a|a.to_string()).unwrap_or("".to_string());
                         let source = match &select {
                             Some(selector) => {
                                 // check selector validity at compile time
@@ -92,10 +92,12 @@ pub fn derive(input: TokenStream) -> TokenStream {
                             }
                             None => quote!(()),
                         };
+
+                        let selector = select.as_ref().map(|a|quote!(Some(#a .to_string()))).unwrap_or_else(||quote!(None));
                         quote!(
                             #ident: ::h2s::macro_utils::adjust_and_parse::<_,N,_>(#source, &#args)
                                         .map_err(|e| ::h2s::ExtractionError::Child{
-                                            context: ::h2s::Position::Selector(Some( #sel .to_string() )),
+                                            context: ::h2s::Position::Struct{selector: #selector, field_name: #field_name .to_string()},
                                             error: Box::new(e),
                                         })
                         ?)
