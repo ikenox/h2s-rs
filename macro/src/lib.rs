@@ -69,17 +69,18 @@ pub fn derive(input: TokenStream) -> TokenStream {
                             .expect("all struct fields for h2s must be named.");
                         let field_name = ident.to_string();
 
+                        // String, select?, attr?
+                        // T, select?
+
                         let source = match &select {
                             Some(selector) => {
                                 // check selector validity at compile time
                                 Selector::parse(selector)
                                     .expect(&format!("invalid css selector: `{}`", selector));
                                 // TODO cache parsed selector
-                                quote!(
-                                    source.select(
+                                quote!(source.select(
                                        &N::Selector::parse(#selector).map_err(|e|::h2s::ExtractionError::Unexpected(e))?
-                                    )
-                                )
+                                    ))
                             }
                             None => quote!(source.clone()),
                         };
