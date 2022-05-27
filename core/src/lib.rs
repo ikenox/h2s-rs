@@ -89,6 +89,17 @@ impl FromHtml for String {
         }
     }
 }
+impl<T: FromHtml, const A: usize> FromHtml for [T; A] {
+    type Source<N: HtmlElementRef> = [T; A];
+    type Args = T::Args;
+
+    fn from_html<N: HtmlElementRef>(
+        source: &Self::Source<N>,
+        args: &Self::Args,
+    ) -> Result<Self, ExtractionError> {
+        todo!()
+    }
+}
 
 impl<T: FromHtml> FromHtml for Vec<T> {
     type Source<N: HtmlElementRef> = Vec<T::Source<N>>;
