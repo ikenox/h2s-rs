@@ -13,13 +13,9 @@ fn main() {
         #[h2s(select = ".articles > div", extract(attr = "data-author"))]
         article_authors: Vec<String>,
         #[h2s(select = ".articles > div")]
-        articles: Vec<ArticleElem>,
+        articles_as_vec: Vec<ArticleElem>,
         #[h2s(select = ".articles > div")]
-        articles_array: [ArticleElem; 3],
-        #[h2s(select = "footer")]
-        footer_maybe: Option<Footer>,
-        #[h2s(select = "footer")]
-        footer: Footer,
+        articles_as_array: [ArticleElem; 3],
     }
     #[derive(FromHtml, Debug, Eq, PartialEq)]
     pub struct ArticleElem {
@@ -56,7 +52,6 @@ fn main() {
         <h2>article3</h2>
     </div>
 </div>
-<footer>footer</footer>
 </body>
 </html>
     "#;
