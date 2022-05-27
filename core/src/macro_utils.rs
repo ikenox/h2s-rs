@@ -12,8 +12,4 @@ pub fn adjust_and_parse<H: FromHtml, N: HtmlNodeRef, S: StructureAdjuster<H::Sou
             .map_err(ExtractionError::StructureUnmatched)?,
         args,
     )
-    .map_err(|e| ExtractionError::Child {
-        context: Position::None, // todo
-        error: std::boxed::Box::new(e),
-    })
 }
