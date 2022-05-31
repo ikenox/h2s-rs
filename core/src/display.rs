@@ -12,8 +12,6 @@ impl Display for ExtractionError {
                 write!(f, "attribute `{attr}` is not found")
             }
             Self::Child { context, error } => {
-                // todo
-                // write!(f, "{source} $ {args} -> {error}")
                 write!(f, "{context} -> {error}")
             }
             Self::Unexpected(detail) => write!(f, "unexpected error: {}", detail),
