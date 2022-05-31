@@ -56,5 +56,8 @@ fn main() {
 
     let page: Page = h2s::utils::parse(html).unwrap();
     assert_eq!(page.blog_title.as_str(), "My tech blog");
-    println!("{:#?}", page)
+    assert_eq!(
+        page.articles.get(0).unwrap().tags,
+        vec!["Tag1".to_string(), "Tag2".to_string()]
+    );
 }
