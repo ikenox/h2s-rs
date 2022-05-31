@@ -60,7 +60,6 @@ fn main() {
 
     let page: Page = h2s::utils::parse(html).unwrap();
     assert_eq!(page.blog_title.as_str(), "My tech blog");
-    println!("{:#?}", page)
 }
 ```
 
