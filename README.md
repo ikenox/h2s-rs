@@ -2,7 +2,7 @@
 
 # h2s
 
-A declarative HTML parser library for Rust, which works like a deserializer from HTML to struct.
+A declarative HTML parser library for Rust, that works like a deserializer from HTML to struct.
 
 ## Example
 
