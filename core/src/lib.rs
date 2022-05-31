@@ -2,7 +2,7 @@
 mod adjuster;
 mod display;
 mod from_html;
-mod impls;
+mod html_backend;
 pub mod macro_utils;
 pub mod utils;
 
