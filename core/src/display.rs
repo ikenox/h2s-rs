@@ -1,5 +1,5 @@
 use crate::*;
-use std::fmt::Display;
+use std::fmt::{Display, Formatter};
 
 impl Display for ExtractionError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

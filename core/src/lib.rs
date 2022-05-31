@@ -6,7 +6,7 @@ mod html_backend;
 pub mod macro_utils;
 pub mod utils;
 
-use std::fmt::{Debug, Formatter};
+use std::fmt::Debug;
 
 pub trait FromHtml<'a, A: 'a>: Sized {
     type Source<N: HtmlElementRef>;
