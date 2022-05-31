@@ -190,7 +190,6 @@ version = "0.1.0"
 dependencies = [
  "h2s_core",
  "h2s_macro",
- "maplit",
  "scraper",
 ]
 
@@ -198,6 +197,7 @@ dependencies = [
 name = "h2s_core"
 version = "0.1.0"
 dependencies = [
+ "maplit",
  "scraper",
 ]
 
