@@ -48,11 +48,6 @@ pub enum Position {
 #[derive(Debug, Eq, PartialEq)]
 pub struct StructureUnmatched(String);
 
-pub enum StringExtractionMethod {
-    Text,
-    Attribute(String),
-}
-
 pub trait StructureAdjuster<N> {
     fn try_adjust(self) -> Result<N, StructureUnmatched>;
 }
