@@ -5,7 +5,7 @@ impl<'a> FromHtml<'a, ()> for String {
 
     fn from_html<N: HtmlElementRef>(
         source: &Self::Source<N>,
-        args: (),
+        _args: (),
     ) -> Result<Self, ExtractionError> {
         Ok(source.text_contents())
     }

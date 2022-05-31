@@ -1,7 +1,7 @@
 #![feature(generic_associated_types)]
 
 use h2s::FromHtml;
-use scraper::{Html, Selector};
+
 
 fn main() {
     #[derive(FromHtml, Debug, Eq, PartialEq)]

@@ -1,4 +1,4 @@
-use crate::{ExtractionError, FromHtml, HtmlElementRef};
+use crate::{ExtractionError, FromHtml};
 use scraper::ElementRef;
 
 pub fn parse<H>(html: &str) -> Result<H, ExtractionError>

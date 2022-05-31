@@ -1,10 +1,8 @@
-use darling::{FromDeriveInput, FromField, FromMeta};
+use darling::{FromDeriveInput, FromField};
 use proc_macro::TokenStream;
-use quote::__private::ext::RepToTokensExt;
 use quote::{quote, ToTokens};
 use scraper::Selector;
-use std::fmt::format;
-use syn::{parse_macro_input, PathArguments, PathSegment, Type, TypePath};
+use syn::parse_macro_input;
 
 #[proc_macro_derive(FromHtml, attributes(h2s))]
 pub fn derive(input: TokenStream) -> TokenStream {
@@ -18,7 +16,6 @@ pub fn derive(input: TokenStream) -> TokenStream {
     #[derive(Debug, FromField)]
     #[darling(attributes(h2s))]
     pub struct H2sFieldReceiver {
-        ty: syn::Type,
         ident: Option<syn::Ident>,
         select: Option<String>,
         attr: Option<String>,
@@ -45,7 +42,6 @@ pub fn derive(input: TokenStream) -> TokenStream {
                 .into_iter()
                 .map(
                     |H2sFieldReceiver {
-                         ty,
                          ident,
                          select,
                          attr,
