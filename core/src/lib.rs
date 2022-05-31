@@ -25,7 +25,15 @@ pub trait HtmlElementRef: Sized + Clone {
     fn get_attribute<S: AsRef<str>>(&self, attr: S) -> Option<&str>;
 }
 
-#[derive(Debug, Eq, PartialEq)]
+pub trait Selector: Sized {
+    fn parse<S: AsRef<str>>(s: S) -> Result<Self, String>;
+}
+
+pub trait StructureAdjuster<N> {
+    fn try_adjust(self) -> Result<N, StructureUnmatched>;
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ExtractionError {
     Unexpected(String),
     StructureUnmatched(StructureUnmatched),
@@ -36,7 +44,7 @@ pub enum ExtractionError {
     },
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Position {
     Index(usize),
     Struct {
@@ -45,15 +53,8 @@ pub enum Position {
     },
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct StructureUnmatched(String);
 
-pub trait StructureAdjuster<N> {
-    fn try_adjust(self) -> Result<N, StructureUnmatched>;
-}
-
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ExtractAttribute(pub String);
-
-pub trait Selector: Sized {
-    fn parse<S: AsRef<str>>(s: S) -> Result<Self, String>;
-}
