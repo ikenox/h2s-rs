@@ -31,13 +31,10 @@ pub fn derive(input: TokenStream) -> TokenStream {
             let field_and_values = data
                 .as_ref()
                 .take_struct()
-                .expect(
-                    format!(
-                        "{} should be struct because it is deriving H2s",
-                        ident.to_string()
-                    )
-                    .as_str(),
-                )
+                .unwrap_or_else(|| panic!(
+                    "{} should be struct because it is deriving H2s",
+                    ident,
+                ))
                 .fields
                 .into_iter()
                 .map(
@@ -59,7 +56,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
                             Some(selector) => {
                                 // check selector validity at compile time
                                 Selector::parse(selector)
-                                    .expect(&format!("invalid css selector: `{}`", selector));
+                                    .unwrap_or_else(|_| panic!("invalid css selector: `{}`", selector));
                                 // TODO cache parsed selector
                                 quote!(source.select(
                                        &N::Selector::parse(#selector).map_err(|e|::h2s::ExtractionError::Unexpected(e))?

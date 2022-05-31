@@ -15,9 +15,7 @@ impl<N> StructureAdjuster<N> for Vec<N> {
             )))
         } else {
             self.pop().ok_or_else(|| {
-                StructureUnmatched(format!(
-                    "expected exactly one element, but no element found",
-                ))
+                StructureUnmatched("expected exactly one element, but no element found".to_string())
             })
         }
     }

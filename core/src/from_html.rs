@@ -51,7 +51,7 @@ impl<'a, B: Copy + 'a, T: FromHtml<'a, B>, const A: usize> FromHtml<'a, B> for [
 
         // this conversion should never fail
         v.try_into().map_err(|_| {
-            ExtractionError::Unexpected(format!("vec to array conversion unexpectedly failed"))
+            ExtractionError::Unexpected("vec to array conversion unexpectedly failed".to_string())
         })
     }
 }
@@ -64,10 +64,10 @@ impl<'a, A: Copy + 'a, T: FromHtml<'a, A>> FromHtml<'a, A> for Vec<T> {
         args: A,
     ) -> Result<Self, ExtractionError> {
         source
-            .into_iter()
+            .iter()
             .enumerate()
             .map(|(i, n)| {
-                T::from_html(n, args.clone()).map_err(|e| ExtractionError::Child {
+                T::from_html(n, args).map_err(|e| ExtractionError::Child {
                     context: Position::Index(i),
                     error: Box::new(e),
                 })
