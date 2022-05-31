@@ -1,6 +1,4 @@
-use std::fmt::{Display, Formatter};
-
-use crate::{ExtractionError, FromHtml, HtmlElementRef, Position, StructureAdjuster};
+use crate::{ExtractionError, FromHtml, HtmlElementRef, StructureAdjuster};
 
 pub fn adjust_and_parse<
     'a,
