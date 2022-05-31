@@ -17,7 +17,7 @@ pub trait FromHtml<'a, A: 'a>: Sized {
     ) -> Result<Self, ExtractionError>;
 }
 
-// todo not force to clone?
+// TODO not force to clone
 pub trait HtmlElementRef: Sized + Clone {
     type Selector: Selector;
     fn select(&self, sel: &Self::Selector) -> Vec<Self>;
