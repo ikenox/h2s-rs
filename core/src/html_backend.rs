@@ -1,3 +1,4 @@
+#[cfg(feature = "backend-scraper")]
 mod scraper {
     use crate::{HtmlElementRef, Selector};
     use itertools::Itertools;
