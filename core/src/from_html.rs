@@ -24,6 +24,7 @@ impl<'a> FromHtml<'a, &'a ExtractAttribute> for String {
             .ok_or_else(|| ExtractionError::AttributeNotFound(args.0.clone()))
     }
 }
+
 impl<'a, B: Copy + 'a, T: FromHtml<'a, B>, const A: usize> FromHtml<'a, B> for [T; A] {
     type Source<N: HtmlElementRef> = [T::Source<N>; A];
 
