@@ -3,7 +3,6 @@ use std::fmt::{Display, Formatter};
 
 impl Display for ExtractionError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        // todo
         match self {
             Self::StructureUnmatched(e) => {
                 write!(f, "structure unmatched: {e}")
