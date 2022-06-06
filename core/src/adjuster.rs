@@ -45,3 +45,56 @@ impl<N> StructureAdjuster<Option<N>> for Vec<N> {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::{StructureAdjuster, StructureUnmatched};
+
+    #[test]
+    fn single() {
+        assert_eq!("foo".try_adjust(), Ok("foo"));
+    }
+
+    #[test]
+    fn vec_to_single() {
+        assert_eq!(vec!["foo"].try_adjust(), Ok("foo"));
+        assert_eq!(
+            vec![].try_adjust(),
+            err::<&str>("expected exactly one element, but no element found"),
+        );
+        assert_eq!(
+            vec!["foo", "bar"].try_adjust(),
+            err::<&str>("expected exactly one element, but found 2 elements"),
+        );
+    }
+
+    #[test]
+    fn vec_to_array() {
+        assert_eq!(vec!["foo", "bar"].try_adjust(), Ok(["foo", "bar"]));
+        assert_eq!(
+            vec!["foo", "var"].try_adjust(),
+            err::<[&str; 1]>("expected exactly 1 elements, but found 2 elements"),
+        );
+        assert_eq!(
+            vec!["foo", "var"].try_adjust(),
+            err::<[&str; 3]>("expected exactly 3 elements, but found 2 elements"),
+        );
+    }
+
+    #[test]
+    fn vec_to_option() {
+        assert_eq!(
+            (vec![] as Vec<&str>).try_adjust(),
+            Ok(None) as Result<Option<&str>, _>
+        );
+        assert_eq!(vec!["foo"].try_adjust(), Ok(Some("foo")));
+        assert_eq!(
+            vec!["foo", "var"].try_adjust(),
+            err::<Option<&str>>("expected at most one element, but found 2 elements"),
+        );
+    }
+
+    fn err<T>(s: &str) -> Result<T, StructureUnmatched> {
+        Err(StructureUnmatched(s.to_string()))
+    }
+}
