@@ -190,7 +190,7 @@ mod test {
 
             fn from_html<N: HtmlElementRef>(
                 source: &Self::Source<N>,
-                args: (),
+                _args: (),
             ) -> Result<Self, ExtractionError> {
                 if source.text_contents() == "error" {
                     Err(err())
@@ -217,7 +217,7 @@ mod test {
         pub struct SelectorMock;
 
         impl Selector for SelectorMock {
-            fn parse<S: AsRef<str>>(s: S) -> Result<Self, String> {
+            fn parse<S: AsRef<str>>(_s: S) -> Result<Self, String> {
                 unimplemented!()
             }
         }
@@ -225,7 +225,7 @@ mod test {
         impl HtmlElementRef for MockElement {
             type Selector = SelectorMock;
 
-            fn select(&self, sel: &Self::Selector) -> Vec<Self> {
+            fn select(&self, _sel: &Self::Selector) -> Vec<Self> {
                 unimplemented!()
             }
 

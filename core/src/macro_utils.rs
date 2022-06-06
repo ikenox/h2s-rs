@@ -12,7 +12,7 @@ pub fn select<N: HtmlElementRef>(
     selector: &'static str,
 ) -> Result<Vec<N>, ExtractionError> {
     // TODO cache parsed selector
-    let selector = N::Selector::parse(selector).map_err(|e| ExtractionError::Unexpected(e))?;
+    let selector = N::Selector::parse(selector).map_err(ExtractionError::Unexpected)?;
     Ok(source.select(&selector))
 }
 

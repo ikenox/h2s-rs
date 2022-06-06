@@ -2,7 +2,6 @@
 
 use h2s::FromHtml;
 
-
 fn main() {
     #[derive(FromHtml, Debug, Eq, PartialEq)]
     pub struct Page {

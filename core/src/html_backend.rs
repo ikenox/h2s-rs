@@ -39,7 +39,7 @@ mod scraper {
 
             assert_eq!(
                 <scraper::Selector as super::Selector>::parse(":invalid:"),
-                Err(format!("failed to parse css selector `:invalid:`")),
+                Err("failed to parse css selector `:invalid:`".to_string()),
             );
         }
 
@@ -70,7 +70,7 @@ mod scraper {
             assert_eq!(
                 a_span
                     .iter()
-                    .map(|e| e.html().to_string())
+                    .map(|e| e.html())
                     .collect::<Vec<_>>(),
                 (1..=3)
                     .map(|s| format!("<span>{s}</span>"))
@@ -81,7 +81,7 @@ mod scraper {
             let b = HtmlElementRef::select(&elem, &Selector::parse(".b").unwrap())[0];
             let b_span = HtmlElementRef::select(&b, &Selector::parse("span").unwrap());
             assert_eq!(b_span.len(), 1);
-            assert_eq!(b_span[0].html().to_string(), "<span>4</span>".to_string());
+            assert_eq!(b_span[0].html(), "<span>4</span>".to_string());
         }
 
         #[test]
@@ -100,7 +100,7 @@ mod scraper {
                 .select(&Selector::parse("div").unwrap())
                 .next()
                 .unwrap();
-            println!("{}", elem.html().to_string());
+            println!("{}", elem.html());
             assert_eq!(elem.get_attribute("id").unwrap(), "foo");
             assert_eq!(elem.get_attribute("class").unwrap(), "bar");
         }
