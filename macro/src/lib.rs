@@ -46,39 +46,29 @@ pub fn derive(input: TokenStream) -> TokenStream {
                         // all fields must be named
                         let ident:&syn::Ident = ident
                             .as_ref()
-                            .expect("all struct fields for h2s must be named.");
+                            .expect("All fields of the struct deriving FromHtml must have a field name");
                         let field_name = ident.to_string();
-
-                        // String, select?, attr?
-                        // T, select?
 
                         let source = match &select {
                             Some(selector) => {
                                 // check selector validity at compile time
-                                Selector::parse(selector)
-                                    .unwrap_or_else(|_| panic!("invalid css selector: `{}`", selector));
-                                // TODO cache parsed selector
-                                quote!(source.select(
-                                       &N::Selector::parse(#selector).map_err(|e|::h2s::ExtractionError::Unexpected(e))?
-                                    ))
+                                Selector::parse(selector).unwrap_or_else(|_| panic!("invalid css selector: `{}`", selector));
+                                quote!(::h2s::macro_utils::select::<N>(source,#selector)?)
                             }
                             None => quote!(source.clone()),
                         };
                         let args = match attr {
                             Some(attr) => {
-                                quote!(& ::h2s::ExtractAttribute(#attr .to_string()))
+                                quote!(& ::h2s::macro_utils::extract_attribute(#attr))
                             }
                             None => quote!(()),
                         };
-
-                        let selector = select.as_ref().map(|a|quote!(Some(#a .to_string()))).unwrap_or_else(||quote!(None));
+                        let selector = select.as_ref()
+                            .map(|a|quote!(Some(#a)))
+                            .unwrap_or_else(||quote!(None));
                         quote!(
-                            #ident: ::h2s::macro_utils::adjust_and_parse::<N,_,_,_>(#source, #args)
-                                        .map_err(|e| ::h2s::ExtractionError::Child{
-                                            context: ::h2s::Position::Struct{selector: #selector, field_name: #field_name .to_string()},
-                                            error: Box::new(e),
-                                        })
-                        ?)
+                            #ident: ::h2s::macro_utils::adjust_and_parse::<N,_,_,_>(#source, #args, #selector, #field_name)?
+                        )
                     },
                 );
 
@@ -89,7 +79,6 @@ pub fn derive(input: TokenStream) -> TokenStream {
                         source: &Self::Source<N>,
                         args: (),
                     ) -> Result<Self, ::h2s::ExtractionError> {
-                        use ::h2s::Selector;
                         Ok(Self{
                             #(#field_and_values),*
                         })
