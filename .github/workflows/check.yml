@@ -1,0 +1,61 @@
+name: Check
+
+on:
+  push:
+  schedule: [cron: "7 0 * * *"]
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  rustfmt:
+    name: check the code is correctly formatted
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          components: rustfmt
+      - uses: Swatinem/rust-cache@v1
+      - name: format all files
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+  test:
+    name: test on ${{ matrix.os }} with ${{ matrix.rust }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { rust: nightly, os: ubuntu-latest }
+          - { rust: nightly, os: macos-latest }
+          - { rust: nightly, os: windows-latest }
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - uses: Swatinem/rust-cache@v1
+      - name: cargo version
+        run: cargo --version
+      - run: cargo test --all
+  clippy:
+    name: clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          components: clippy
+      - uses: Swatinem/rust-cache@v1
+      - name: run clippy
+        run: cargo clippy --all -- -D warnings
