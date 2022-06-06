@@ -68,10 +68,7 @@ mod scraper {
             let elem = doc.root_element();
             let a_span = HtmlElementRef::select(&elem, &Selector::parse("div.a > span").unwrap());
             assert_eq!(
-                a_span
-                    .iter()
-                    .map(|e| e.html())
-                    .collect::<Vec<_>>(),
+                a_span.iter().map(|e| e.html()).collect::<Vec<_>>(),
                 (1..=3)
                     .map(|s| format!("<span>{s}</span>"))
                     .collect::<Vec<_>>(),
