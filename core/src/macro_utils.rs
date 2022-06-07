@@ -2,20 +2,16 @@
 //! You wouldn't call these methods directly in your code.
 
 use crate::{
-    ExtractAttribute, ExtractionError, FromHtml, HtmlElementRef, Position, Selector,
-    StructureAdjuster,
+    ExtractAttribute, FromHtml, HtmlElementRef, ParseError, Position, Selector, StructureAdjuster,
 };
 
 pub fn extract_attribute(attr: &str) -> ExtractAttribute {
     ExtractAttribute(attr.to_string())
 }
 
-pub fn select<N: HtmlElementRef>(
-    source: &N,
-    selector: &'static str,
-) -> Result<Vec<N>, ExtractionError> {
+pub fn select<N: HtmlElementRef>(source: &N, selector: &'static str) -> Result<Vec<N>, ParseError> {
     // TODO cache parsed selector
-    let selector = N::Selector::parse(selector).map_err(ExtractionError::Unexpected)?;
+    let selector = N::Selector::parse(selector).map_err(ParseError::Unexpected)?;
     Ok(source.select(&selector))
 }
 
@@ -30,12 +26,12 @@ pub fn adjust_and_parse<
     args: A,
     selector: Option<&'static str>,
     field_name: &'static str,
-) -> Result<H, ExtractionError> {
+) -> Result<H, ParseError> {
     source
         .try_adjust()
-        .map_err(ExtractionError::StructureUnmatched)
+        .map_err(ParseError::StructureUnmatched)
         .and_then(|s| H::from_html(&s, args))
-        .map_err(|e| ExtractionError::Child {
+        .map_err(|e| ParseError::Child {
             context: Position::Struct {
                 selector: selector.map(|a| a.to_string()),
                 field_name: field_name.to_string(),

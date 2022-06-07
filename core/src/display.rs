@@ -1,7 +1,7 @@
 use crate::*;
 use std::fmt::{Display, Formatter};
 
-impl Display for ExtractionError {
+impl Display for ParseError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::StructureUnmatched(e) => {

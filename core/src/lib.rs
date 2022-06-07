@@ -4,17 +4,14 @@ mod display;
 mod from_html;
 mod html_backend;
 pub mod macro_utils;
-pub mod utils;
+pub mod util;
 
 use std::fmt::Debug;
 
 pub trait FromHtml<'a, A: 'a>: Sized {
     type Source<N: HtmlElementRef>;
 
-    fn from_html<N: HtmlElementRef>(
-        source: &Self::Source<N>,
-        args: A,
-    ) -> Result<Self, ExtractionError>;
+    fn from_html<N: HtmlElementRef>(source: &Self::Source<N>, args: A) -> Result<Self, ParseError>;
 }
 
 // TODO not force to clone
@@ -34,13 +31,13 @@ pub trait StructureAdjuster<N> {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub enum ExtractionError {
+pub enum ParseError {
     Unexpected(String),
     StructureUnmatched(StructureUnmatched),
     AttributeNotFound(String),
     Child {
         context: Position,
-        error: Box<ExtractionError>,
+        error: Box<ParseError>,
     },
 }
 
