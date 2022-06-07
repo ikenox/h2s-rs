@@ -6,7 +6,7 @@ impl<'a> FromHtml<'a, ()> for String {
     fn from_html<N: HtmlElementRef>(
         source: &Self::Source<N>,
         _args: (),
-    ) -> Result<Self, ExtractionError> {
+    ) -> Result<Self, ParseError> {
         Ok(source.text_contents())
     }
 }
@@ -17,26 +17,23 @@ impl<'a> FromHtml<'a, &'a ExtractAttribute> for String {
     fn from_html<N: HtmlElementRef>(
         source: &Self::Source<N>,
         args: &'a ExtractAttribute,
-    ) -> Result<Self, ExtractionError> {
+    ) -> Result<Self, ParseError> {
         source
             .get_attribute(&args.0)
             .map(|s| s.to_string())
-            .ok_or_else(|| ExtractionError::AttributeNotFound(args.0.clone()))
+            .ok_or_else(|| ParseError::AttributeNotFound(args.0.clone()))
     }
 }
 
 impl<'a, B: Copy + 'a, T: FromHtml<'a, B>, const A: usize> FromHtml<'a, B> for [T; A] {
     type Source<N: HtmlElementRef> = [T::Source<N>; A];
 
-    fn from_html<N: HtmlElementRef>(
-        source: &Self::Source<N>,
-        args: B,
-    ) -> Result<Self, ExtractionError> {
+    fn from_html<N: HtmlElementRef>(source: &Self::Source<N>, args: B) -> Result<Self, ParseError> {
         let v = source
             .iter()
             .enumerate()
             .map(|(i, n)| {
-                T::from_html(n, args).map_err(|e| ExtractionError::Child {
+                T::from_html(n, args).map_err(|e| ParseError::Child {
                     context: Position::Index(i),
                     error: Box::new(e),
                 })
@@ -52,7 +49,7 @@ impl<'a, B: Copy + 'a, T: FromHtml<'a, B>, const A: usize> FromHtml<'a, B> for [
 
         // this conversion should never fail
         v.try_into().map_err(|_| {
-            ExtractionError::Unexpected("vec to array conversion unexpectedly failed".to_string())
+            ParseError::Unexpected("vec to array conversion unexpectedly failed".to_string())
         })
     }
 }
@@ -60,15 +57,12 @@ impl<'a, B: Copy + 'a, T: FromHtml<'a, B>, const A: usize> FromHtml<'a, B> for [
 impl<'a, A: Copy + 'a, T: FromHtml<'a, A>> FromHtml<'a, A> for Vec<T> {
     type Source<N: HtmlElementRef> = Vec<T::Source<N>>;
 
-    fn from_html<N: HtmlElementRef>(
-        source: &Self::Source<N>,
-        args: A,
-    ) -> Result<Self, ExtractionError> {
+    fn from_html<N: HtmlElementRef>(source: &Self::Source<N>, args: A) -> Result<Self, ParseError> {
         source
             .iter()
             .enumerate()
             .map(|(i, n)| {
-                T::from_html(n, args).map_err(|e| ExtractionError::Child {
+                T::from_html(n, args).map_err(|e| ParseError::Child {
                     context: Position::Index(i),
                     error: Box::new(e),
                 })
@@ -88,10 +82,7 @@ impl<'a, A: Copy + 'a, T: FromHtml<'a, A>> FromHtml<'a, A> for Vec<T> {
 impl<'a, A: 'a, T: FromHtml<'a, A>> FromHtml<'a, A> for Option<T> {
     type Source<N: HtmlElementRef> = Option<T::Source<N>>;
 
-    fn from_html<N: HtmlElementRef>(
-        source: &Self::Source<N>,
-        args: A,
-    ) -> Result<Self, ExtractionError> {
+    fn from_html<N: HtmlElementRef>(source: &Self::Source<N>, args: A) -> Result<Self, ParseError> {
         source
             .as_ref()
             .map(|n| T::from_html(n, args))
@@ -105,8 +96,8 @@ mod test {
     use maplit::hashmap;
     use mock::*;
 
-    fn err() -> ExtractionError {
-        ExtractionError::Unexpected("test error".to_string())
+    fn err() -> ParseError {
+        ParseError::Unexpected("test error".to_string())
     }
 
     #[test]
@@ -122,7 +113,7 @@ mod test {
                 &vec![MockElement::new("a"), MockElement::new("error")],
                 (),
             ),
-            Err(ExtractionError::Child {
+            Err(ParseError::Child {
                 context: Position::Index(1),
                 error: Box::new(err())
             }),
@@ -192,7 +183,7 @@ mod test {
             fn from_html<N: HtmlElementRef>(
                 source: &Self::Source<N>,
                 _args: (),
-            ) -> Result<Self, ExtractionError> {
+            ) -> Result<Self, ParseError> {
                 if source.text_contents() == "error" {
                     Err(err())
                 } else {

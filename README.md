@@ -65,7 +65,7 @@ fn main() {
 </html>
     "#;
 
-    let page: Page = h2s::utils::parse(html).unwrap();
+    let page: Page = h2s::util::parse(html).unwrap();
     assert_eq!(page.blog_title.as_str(), "My tech blog");
     assert_eq!(
         page.articles.get(0).unwrap().tags,

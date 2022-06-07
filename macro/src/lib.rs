@@ -78,7 +78,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
                     fn from_html<N: ::h2s::HtmlElementRef>(
                         source: &Self::Source<N>,
                         args: (),
-                    ) -> Result<Self, ::h2s::ExtractionError> {
+                    ) -> Result<Self, ::h2s::ParseError> {
                         Ok(Self{
                             #(#field_and_values),*
                         })
