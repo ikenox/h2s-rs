@@ -3,21 +3,23 @@ name = "h2s"
 version = "0.1.0"
 authors = ["Naoto Ikeno <ikenox@gmail.com>"]
 edition = "2021"
-repository = "https://github.com/ikenox/h2s"
+repository = "https://github.com/ikenox/h2s-rs"
 description = """
 A declarative HTML parser library.
 """
 license = "MIT"
 readme = "README.md"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[workspace]
+members = ["macro", "core"]
 
 [dependencies]
 h2s_core = { version = "=0.1.0", path = "core" }
 h2s_macro = { version = "=0.1.0", path = "macro" }
 
-[workspace]
-members = ["macro", "core"]
-
 [dev-dependencies]
 scraper = "0.13.0"
+skeptic = "0.13"
+
+[build-dependencies]
+skeptic = "0.13"
