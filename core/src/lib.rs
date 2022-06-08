@@ -32,9 +32,7 @@ pub trait StructureAdjuster<N> {
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ParseError {
-    Unexpected(String),
-    StructureUnmatched(StructureUnmatched),
-    AttributeNotFound(String),
+    Root(String),
     Child {
         context: Position,
         error: Box<ParseError>,

@@ -4,16 +4,12 @@ use std::fmt::{Display, Formatter};
 impl Display for ParseError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::StructureUnmatched(e) => {
-                write!(f, "{e}")
-            }
-            Self::AttributeNotFound(attr) => {
-                write!(f, "attribute `{attr}` is not found")
+            Self::Root(detail) => {
+                write!(f, "{detail}")
             }
             Self::Child { context, error } => {
                 write!(f, "{context} -> {error}")
             }
-            Self::Unexpected(detail) => write!(f, "unexpected error: {}", detail),
         }
     }
 }
@@ -76,21 +72,12 @@ mod test {
     #[test]
     fn parse_error() {
         let case = vec![
-            {
-                let e = StructureUnmatched("foo".to_string());
-                (ParseError::StructureUnmatched(e.clone()), format!("{e}"))
-            },
-            (
-                ParseError::AttributeNotFound("foo".to_string()),
-                "attribute `foo` is not found".to_string(),
-            ),
-            (
-                ParseError::Unexpected("foo".to_string()),
-                "unexpected error: foo".to_string(),
-            ),
+            // root
+            (ParseError::Root("foo".to_string()), "foo".to_string()),
+            // child
             {
                 let p = Position::Index(3);
-                let e = ParseError::Unexpected("foo".to_string());
+                let e = ParseError::Root("foo".to_string());
                 (
                     ParseError::Child {
                         context: p.clone(),

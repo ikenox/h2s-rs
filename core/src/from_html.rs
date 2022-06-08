@@ -24,7 +24,7 @@ impl<'a> FromHtml<'a, &'a ExtractAttribute> for String {
         source
             .get_attribute(&args.0)
             .map(|s| s.to_string())
-            .ok_or_else(|| ParseError::AttributeNotFound(args.0.clone()))
+            .ok_or_else(|| ParseError::Root(format!("attribute `{}` not found", args.0)))
     }
 }
 
@@ -52,7 +52,7 @@ impl<'a, B: Copy + 'a, T: FromHtml<'a, B>, const A: usize> FromHtml<'a, B> for [
 
         // this conversion should never fail because it has been already checked at build time
         v.try_into().map_err(|_| {
-            ParseError::Unexpected("vec to array conversion unexpectedly failed".to_string())
+            ParseError::Root("vec to array conversion is unexpectedly failed".to_string())
         })
     }
 }
@@ -100,7 +100,7 @@ mod test {
     use mock::*;
 
     fn err() -> ParseError {
-        ParseError::Unexpected("test error".to_string())
+        ParseError::Root("test error".to_string())
     }
 
     #[test]
@@ -180,7 +180,7 @@ mod test {
                 },
                 &ExtractAttribute("aaa".to_string())
             ),
-            Err(ParseError::AttributeNotFound("aaa".to_string())),
+            Err(ParseError::Root("attribute `aaa` not found".to_string())),
             "error when element doesn't have the specified attribute"
         );
     }

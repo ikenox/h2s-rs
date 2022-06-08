@@ -10,7 +10,11 @@ pub fn extract_attribute(attr: &str) -> ExtractAttribute {
 
 pub fn select<N: HtmlElementRef>(source: &N, selector: &'static str) -> Result<Vec<N>, ParseError> {
     // TODO cache parsed selector
-    let selector = N::Selector::parse(selector).map_err(ParseError::Unexpected)?;
+    let selector = N::Selector::parse(selector).map_err(|_| {
+        ParseError::Root(format!(
+            "unexpected error occurs while parsing CSS selector"
+        ))
+    })?;
     Ok(source.select(&selector))
 }
 
@@ -28,7 +32,7 @@ pub fn adjust_and_parse<
 ) -> Result<H, ParseError> {
     source
         .try_adjust()
-        .map_err(ParseError::StructureUnmatched)
+        .map_err(|e| ParseError::Root(format!("failed to adjust structure: {e}")))
         .and_then(|s| H::from_html(&s, args))
         .map_err(|e| ParseError::Child {
             context: Position::Struct {
