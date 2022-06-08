@@ -1,9 +1,8 @@
 //! A set of internal utility methods that will be used in the auto-generated code on `FromHtml` derive macro.
 //! You wouldn't call these methods directly in your code.
 
-use crate::{
-    ExtractAttribute, FromHtml, HtmlElementRef, ParseError, Position, Selector, StructureAdjuster,
-};
+use crate::from_html::ExtractAttribute;
+use crate::{FromHtml, HtmlElementRef, ParseError, Position, Selector, StructureAdjuster};
 
 pub fn extract_attribute(attr: &str) -> ExtractAttribute {
     ExtractAttribute(attr.to_string())

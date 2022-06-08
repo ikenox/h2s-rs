@@ -153,19 +153,13 @@ fn nested_struct() {
 
 #[test]
 #[ignore]
-fn invalid_macro_attribute_pattern() {
+fn invalid_macro_attribute_combination() {
     // TODO
 }
 
 #[test]
 #[ignore]
 fn macro_error_message() {
-    // TODO
-}
-
-#[test]
-#[ignore]
-fn parse_error_message() {
     // TODO
 }
 

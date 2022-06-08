@@ -11,6 +11,9 @@ impl<'a> FromHtml<'a, ()> for String {
     }
 }
 
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct ExtractAttribute(pub String);
+
 impl<'a> FromHtml<'a, &'a ExtractAttribute> for String {
     type Source<N: HtmlElementRef> = N;
 
@@ -47,7 +50,7 @@ impl<'a, B: Copy + 'a, T: FromHtml<'a, B>, const A: usize> FromHtml<'a, B> for [
                 })
             })?;
 
-        // this conversion should never fail
+        // this conversion should never fail because it has been already checked at build time
         v.try_into().map_err(|_| {
             ParseError::Unexpected("vec to array conversion unexpectedly failed".to_string())
         })
@@ -143,13 +146,16 @@ mod test {
     }
 
     #[test]
-    fn string() {
+    fn string_inner_text() {
         assert_eq!(
             String::from_html(&MockElement::new("text"), ()),
             Ok("text".to_string()),
             "inner text content will be extracted"
         );
+    }
 
+    #[test]
+    fn string_attribute() {
         assert_eq!(
             String::from_html(
                 &MockElement {
@@ -162,7 +168,21 @@ mod test {
             ),
             Ok("bar".to_string()),
             "correct attribute value will be extracted"
-        )
+        );
+
+        assert_eq!(
+            String::from_html(
+                &MockElement {
+                    attributes: hashmap! {
+                        "foo".to_string() => "bar".to_string(),
+                    },
+                    ..Default::default()
+                },
+                &ExtractAttribute("aaa".to_string())
+            ),
+            Err(ParseError::AttributeNotFound("aaa".to_string())),
+            "error when element doesn't have the specified attribute"
+        );
     }
 
     mod mock {

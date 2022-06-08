@@ -52,6 +52,3 @@ pub enum Position {
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct StructureUnmatched(String);
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct ExtractAttribute(pub String);
