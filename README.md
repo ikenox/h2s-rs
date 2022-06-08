@@ -42,16 +42,17 @@ fn main() {
     <div class="articles">
         <div>
             <h2><a href="https://example.com/1">article1</a></h2>
+            <p class="modified-date">2020-05-01</p>
             <ul><li>Tag1</li><li>Tag2</li></ul>
         </div>
         <div>
             <h2><a href="https://example.com/2">article2</a></h2>
+            <p class="modified-date">2020-03-30</p>
             <ul></ul>
         </div>
         <div>
             <h2><a href="https://example.com/3">article3</a></h2>
             <ul><li>Tag3</li></ul>
-            <p class="modified-date">2020-05-01</p>
         </div>
     </div>
 </div>
@@ -66,19 +67,19 @@ fn main() {
             Article {
                 title: "article1".into(),
                 url: "https://example.com/1".into(),
-                modified_date: None,
+                modified_date: Some("2020-05-01".into()),
                 tags: vec!["Tag1".into(), "Tag2".into()]
             },
             Article {
                 title: "article2".into(),
                 url: "https://example.com/2".into(),
-                modified_date: None,
+                modified_date: Some("2020-03-30".into()),
                 tags: vec![]
             },
             Article {
                 title: "article3".into(),
                 url: "https://example.com/3".into(),
-                modified_date: Some("2020-05-01".into()),
+                modified_date: None,
                 tags: vec!["Tag3".into()]
             },
         ]
@@ -86,4 +87,4 @@ fn main() {
 }
 ```
 
-You can see more example  [examples/](./examples/)
+You can see more examples at [examples/](./examples/).
