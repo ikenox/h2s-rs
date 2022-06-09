@@ -101,11 +101,12 @@ impl H2sFieldReceiver {
             }
             None => quote!(()),
         };
+
         let selector = self
             .select
             .as_ref()
-            .map(|a| quote!(Some(#a)))
-            .unwrap_or_else(|| quote!(None));
+            .map(|a| quote!(::std::option::Option::Some(#a)))
+            .unwrap_or_else(|| quote!(::std::option::Option::None));
         quote!(
             #ident: ::h2s::macro_utils::adjust_and_parse::<N,_,_,_>(#source, #args, #selector, #field_name)?
         )
