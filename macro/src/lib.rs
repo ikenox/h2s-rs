@@ -3,7 +3,8 @@ use darling::{FromDeriveInput, FromField};
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use scraper::Selector;
-use syn::parse_macro_input;
+use syn::spanned::Spanned;
+use syn::{parse_macro_input, Type};
 
 #[proc_macro_derive(FromHtml, attributes(h2s))]
 pub fn derive(input: TokenStream) -> TokenStream {
@@ -28,6 +29,8 @@ struct FromHtmlStructReceiver {
 #[darling(attributes(h2s))]
 struct H2sFieldReceiver {
     ident: Option<syn::Ident>,
+    ty: Type,
+
     select: Option<String>,
     attr: Option<String>,
 }
@@ -80,8 +83,14 @@ impl H2sFieldReceiver {
         let source = match &self.select {
             Some(selector) => {
                 // check selector validity at compile time
-                Selector::parse(selector)
-                    .unwrap_or_else(|_| panic!("invalid css selector: `{}`", selector));
+                if let Err(_) = Selector::parse(selector) {
+                    let err = syn::Error::new(
+                        ident.span(), // TODO highlight the macro attribute, not field ident
+                        format!("invalid css selector: `{}`", selector),
+                    )
+                    .to_compile_error();
+                    return quote!(#ident: #err);
+                }
                 quote!(::h2s::macro_utils::select::<N>(source,#selector)?)
             }
             None => quote!(source.clone()),
