@@ -21,15 +21,13 @@ impl Display for Position {
             Position::Struct {
                 selector,
                 field_name,
-            } => write!(
-                f,
-                "{field_name}{}",
+            } => {
                 if let Some(s) = selector {
-                    format!("[{s}]")
+                    write!(f, "[{s}]({field_name})")
                 } else {
-                    "".to_string()
+                    write!(f, "{field_name}")
                 }
-            ),
+            }
         }
     }
 }
@@ -53,7 +51,7 @@ mod test {
                     selector: Some(".a > .b".to_string()),
                     field_name: "bar".to_string(),
                 },
-                r#"bar[.a > .b]"#,
+                r#"[.a > .b](bar)"#,
             ),
             (
                 Position::Struct {
