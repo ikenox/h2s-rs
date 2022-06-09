@@ -34,7 +34,7 @@ pub trait StructureAdjuster<N> {
 pub enum ParseError {
     Root(String),
     Child {
-        context: Position,
+        position: Position,
         error: Box<ParseError>,
     },
 }

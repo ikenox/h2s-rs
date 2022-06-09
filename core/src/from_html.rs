@@ -37,7 +37,7 @@ impl<'a, B: Copy + 'a, T: FromHtml<'a, B>, const A: usize> FromHtml<'a, B> for [
             .enumerate()
             .map(|(i, n)| {
                 T::from_html(n, args).map_err(|e| ParseError::Child {
-                    context: Position::Index(i),
+                    position: Position::Index(i),
                     error: Box::new(e),
                 })
             })
@@ -66,7 +66,7 @@ impl<'a, A: Copy + 'a, T: FromHtml<'a, A>> FromHtml<'a, A> for Vec<T> {
             .enumerate()
             .map(|(i, n)| {
                 T::from_html(n, args).map_err(|e| ParseError::Child {
-                    context: Position::Index(i),
+                    position: Position::Index(i),
                     error: Box::new(e),
                 })
             })
@@ -117,7 +117,7 @@ mod test {
                 (),
             ),
             Err(ParseError::Child {
-                context: Position::Index(1),
+                position: Position::Index(1),
                 error: Box::new(err())
             }),
             "returned error if one of the vec items fails to apply"

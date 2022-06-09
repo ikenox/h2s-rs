@@ -7,8 +7,8 @@ impl Display for ParseError {
             Self::Root(detail) => {
                 write!(f, "{detail}")
             }
-            Self::Child { context, error } => {
-                write!(f, "{context} -> {error}")
+            Self::Child { position, error } => {
+                write!(f, "{position} -> {error}")
             }
         }
     }
@@ -23,9 +23,9 @@ impl Display for Position {
                 field_name,
             } => write!(
                 f,
-                "[{field_name}]{}",
+                "{field_name}{}",
                 if let Some(s) = selector {
-                    format!("(\"{s}\")")
+                    format!("[{s}]")
                 } else {
                     "".to_string()
                 }
@@ -53,14 +53,14 @@ mod test {
                     selector: Some(".a > .b".to_string()),
                     field_name: "bar".to_string(),
                 },
-                r#"[bar](".a > .b")"#,
+                r#"bar[.a > .b]"#,
             ),
             (
                 Position::Struct {
                     selector: None,
                     field_name: "bar".to_string(),
                 },
-                "[bar]",
+                "bar",
             ),
         ];
 
@@ -80,7 +80,7 @@ mod test {
                 let e = ParseError::Root("foo".to_string());
                 (
                     ParseError::Child {
-                        context: p.clone(),
+                        position: p.clone(),
                         error: Box::new(e.clone()),
                     },
                     format!("{p} -> {e}"),
@@ -92,7 +92,4 @@ mod test {
             assert_eq!(format!("{}", e), msg);
         }
     }
-
-    #[test]
-    fn structure_unmatched() {}
 }

@@ -35,7 +35,7 @@ pub fn adjust_and_parse<
         .map_err(|e| ParseError::Root(format!("failed to adjust structure: {e}")))
         .and_then(|s| H::from_html(&s, args))
         .map_err(|e| ParseError::Child {
-            context: Position::Struct {
+            position: Position::Struct {
                 selector: selector.map(|a| a.to_string()),
                 field_name: field_name.to_string(),
             },
