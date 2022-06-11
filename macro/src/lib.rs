@@ -44,8 +44,10 @@ impl ToTokens for FromHtmlStructReceiver {
 
         let token_stream = match data.as_ref() {
             Data::Struct(fields) => {
-                let field_and_values = fields.into_iter().enumerate().map(|(i, r)| {
-                    field_name_and_value(&FieldInfo {
+                let fields = fields
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, r)| FieldInfo {
                         field_name: r
                             .ident
                             .clone()
@@ -55,20 +57,8 @@ impl ToTokens for FromHtmlStructReceiver {
                         ty: r.ty.clone(),
                         attr: r.attr.clone(),
                     })
-                });
-                quote! {
-                    impl <'a> ::h2s::FromHtml<'a, ()> for #ident {
-                        type Source<N: ::h2s::HtmlElementRef> = N;
-                        fn from_html<N: ::h2s::HtmlElementRef>(
-                            source: &Self::Source<N>,
-                            args: (),
-                        ) -> Result<Self, ::h2s::ParseError> {
-                            Ok(Self{
-                                #(#field_and_values),*
-                            })
-                        }
-                    }
-                }
+                    .collect::<Vec<_>>();
+                impl_token_stream(ident, fields.iter())
             }
             Data::Enum(_) => {
                 syn::Error::new(ident.span(), "FromHtml doesn't support enum".to_string())
@@ -77,6 +67,26 @@ impl ToTokens for FromHtmlStructReceiver {
         };
 
         tokens.extend(token_stream);
+    }
+}
+
+fn impl_token_stream<'a>(
+    ident: &syn::Ident,
+    fields: impl Iterator<Item = &'a FieldInfo>,
+) -> proc_macro2::TokenStream {
+    let field_and_values = fields.map(field_name_and_value).collect::<Vec<_>>();
+    quote! {
+        impl <'a> ::h2s::FromHtml<'a, ()> for #ident {
+            type Source<N: ::h2s::HtmlElementRef> = N;
+            fn from_html<N: ::h2s::HtmlElementRef>(
+                source: &Self::Source<N>,
+                args: (),
+            ) -> Result<Self, ::h2s::ParseError> {
+                Ok(Self{
+                    #(#field_and_values),*
+                })
+            }
+        }
     }
 }
 
@@ -91,9 +101,11 @@ fn field_name_and_value(f: &FieldInfo) -> proc_macro2::TokenStream {
 
     let args = f.args();
 
-    let selector = f.select.as_ref();
-    // .map(|a| quote!(::std::option::Option::Some(#a)))
-    // .unwrap_or_else(|| quote!(::std::option::Option::None));
+    let selector = f
+        .select
+        .as_ref()
+        .map(|a| quote!(::std::option::Option::Some(#a)))
+        .unwrap_or_else(|| quote!(::std::option::Option::None));
 
     let field_name = f.field_name.as_string();
 
@@ -106,6 +118,7 @@ enum FieldName {
     Named(syn::Ident),
     Index(usize),
 }
+
 impl FieldName {
     fn as_string(&self) -> String {
         match &self {
