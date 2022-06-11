@@ -89,10 +89,10 @@ impl H2sFieldReceiver {
                 if let Err(_) = Selector::parse(selector) {
                     let err = syn::Error::new(
                         // TODO highlight the span of macro attribute, not field ident and type
-                        match &self.ident {
-                            Some(id) => id.span(),
-                            None => self.ty.span(),
-                        },
+                        self.ident
+                            .as_ref()
+                            .and_then(|id| id.span().join(self.ty.span()))
+                            .unwrap_or_else(|| self.ty.span()),
                         format!("invalid css selector: `{}`", selector),
                     )
                     .to_compile_error();
