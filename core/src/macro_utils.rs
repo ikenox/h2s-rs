@@ -11,9 +11,7 @@ pub fn extract_attribute(attr: &str) -> ExtractAttribute {
 pub fn select<N: HtmlElementRef>(source: &N, selector: &'static str) -> Result<Vec<N>, ParseError> {
     // TODO cache parsed selector
     let selector = N::Selector::parse(selector).map_err(|_| {
-        ParseError::Root(format!(
-            "unexpected error occurs while parsing CSS selector"
-        ))
+        ParseError::Root("unexpected error occurs while parsing CSS selector".to_string())
     })?;
     Ok(source.select(&selector))
 }

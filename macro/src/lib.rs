@@ -63,7 +63,7 @@ impl ToTokens for FromHtmlStructReceiver {
                 }
             }
             Data::Enum(_) => {
-                syn::Error::new(ident.span(), format!("FromHtml doesn't support enum"))
+                syn::Error::new(ident.span(), "FromHtml doesn't support enum".to_string())
                     .to_compile_error()
             }
         };
@@ -86,7 +86,7 @@ impl H2sFieldReceiver {
         let source = match &self.select {
             Some(selector) => {
                 // check selector validity at compile time
-                if let Err(_) = Selector::parse(selector) {
+                if Selector::parse(selector).is_err() {
                     let err = syn::Error::new(
                         // TODO highlight the span of macro attribute, not field ident and type
                         self.ident
