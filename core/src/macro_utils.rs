@@ -10,8 +10,9 @@ pub fn extract_attribute(attr: &str) -> ExtractAttribute {
 
 pub fn select<N: HtmlElementRef>(source: &N, selector: &'static str) -> Result<Vec<N>, ParseError> {
     // TODO cache parsed selector
-    let selector = N::Selector::parse(selector).map_err(|_| {
-        ParseError::Root("unexpected error occurs while parsing CSS selector".to_string())
+    let selector = N::Selector::parse(selector).map_err(|_| ParseError::Root {
+        message: "unexpected error occurs while parsing CSS selector".to_string(),
+        cause: None,
     })?;
     Ok(source.select(&selector))
 }
@@ -30,7 +31,10 @@ pub fn adjust_and_parse<
 ) -> Result<H, ParseError> {
     source
         .try_adjust()
-        .map_err(|e| ParseError::Root(format!("failed to adjust structure: {e}")))
+        .map_err(|e| ParseError::Root {
+            message: "failed to adjust structure".to_string(),
+            cause: Some(format!("{}", e)),
+        })
         .and_then(|s| H::from_html(&s, args))
         .map_err(|e| ParseError::Child {
             position: Position::Struct {

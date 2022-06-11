@@ -4,9 +4,10 @@ use std::fmt::{Display, Formatter};
 impl Display for ParseError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Root(detail) => {
-                write!(f, "{detail}")
-            }
+            Self::Root { message, cause } => match cause {
+                Some(e) => write!(f, "{message}: {e}"),
+                None => write!(f, "{message}"),
+            },
             Self::Child { position, error } => {
                 write!(f, "{position} -> {error}")
             }
@@ -71,11 +72,27 @@ mod test {
     fn parse_error() {
         let case = vec![
             // root
-            (ParseError::Root("foo".to_string()), "foo".to_string()),
+            (
+                ParseError::Root {
+                    message: "foo".to_string(),
+                    cause: None,
+                },
+                "foo".to_string(),
+            ),
+            (
+                ParseError::Root {
+                    message: "foo".to_string(),
+                    cause: Some("bar".to_string()),
+                },
+                "foo: bar".to_string(),
+            ),
             // child
             {
                 let p = Position::Index(3);
-                let e = ParseError::Root("foo".to_string());
+                let e = ParseError::Root {
+                    message: "foo".to_string(),
+                    cause: Some("bar".to_string()),
+                };
                 (
                     ParseError::Child {
                         position: p.clone(),
