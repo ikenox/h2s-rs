@@ -6,18 +6,6 @@ use scraper::Selector;
 use syn::parse_macro_input;
 use syn::spanned::Spanned;
 
-#[proc_macro_derive(FromHtml, attributes(h2s))]
-pub fn derive(input: TokenStream) -> TokenStream {
-    let struct_receiver: FromHtmlStructReceiver =
-        match FromHtmlStructReceiver::from_derive_input(&parse_macro_input!(input)) {
-            Ok(a) => a,
-            Err(e) => {
-                return TokenStream::from(e.write_errors());
-            }
-        };
-    quote!(#struct_receiver).into()
-}
-
 #[derive(Debug, FromDeriveInput)]
 #[darling(attributes(h2s), supports(struct_any))]
 struct FromHtmlStructReceiver {
@@ -33,6 +21,14 @@ struct H2sFieldReceiver {
 
     select: Option<String>,
     attr: Option<String>,
+}
+
+#[proc_macro_derive(FromHtml, attributes(h2s))]
+pub fn derive(input: TokenStream) -> TokenStream {
+    match FromHtmlStructReceiver::from_derive_input(&parse_macro_input!(input)) {
+        Ok(receiver) => quote!(#receiver).into(),
+        Err(e) => TokenStream::from(e.write_errors()),
+    }
 }
 
 impl ToTokens for FromHtmlStructReceiver {
