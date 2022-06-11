@@ -44,10 +44,18 @@ impl ToTokens for FromHtmlStructReceiver {
 
         let token_stream = match data.as_ref() {
             Data::Struct(fields) => {
-                let field_and_values = fields
-                    .into_iter()
-                    .enumerate()
-                    .map(|(i, r)| r.build_field_token_stream(i));
+                let field_and_values = fields.into_iter().enumerate().map(|(i, r)| {
+                    field_name_and_value(&FieldInfo {
+                        field_name: r
+                            .ident
+                            .clone()
+                            .map(|id| FieldName::Named(id))
+                            .unwrap_or_else(|| FieldName::Index(i)),
+                        select: r.select.clone(),
+                        ty: r.ty.clone(),
+                        attr: r.attr.clone(),
+                    })
+                });
                 quote! {
                     impl <'a> ::h2s::FromHtml<'a, ()> for #ident {
                         type Source<N: ::h2s::HtmlElementRef> = N;
@@ -72,57 +80,92 @@ impl ToTokens for FromHtmlStructReceiver {
     }
 }
 
-impl H2sFieldReceiver {
-    fn build_field_token_stream(&self, index: usize) -> proc_macro2::TokenStream {
-        // all fields must be named
-        let token_builder = |t| match &self.ident {
-            Some(id) => quote!(#id: #t),
-            None => {
-                let i = syn::Index::from(index);
-                quote!(#i: #t)
-            }
-        };
+fn field_name_and_value(f: &FieldInfo) -> proc_macro2::TokenStream {
+    let source = match f.source() {
+        Ok(Source::Root) => quote!(source.clone()),
+        Ok(Source::Select(selector)) => {
+            quote!(::h2s::macro_utils::select::<N>(source,#selector)?)
+        }
+        Err(e) => return f.field_name_and_value(e.to_compile_error()),
+    };
 
-        let source = match &self.select {
+    let args = f.args();
+
+    let selector = f.select.as_ref();
+    // .map(|a| quote!(::std::option::Option::Some(#a)))
+    // .unwrap_or_else(|| quote!(::std::option::Option::None));
+
+    let field_name = f.field_name.as_string();
+
+    f.field_name_and_value(
+        quote!(::h2s::macro_utils::adjust_and_parse::<N,_,_,_>(#source, #args, #selector, #field_name)?),
+    )
+}
+
+enum FieldName {
+    Named(syn::Ident),
+    Index(usize),
+}
+impl FieldName {
+    fn as_string(&self) -> String {
+        match &self {
+            FieldName::Named(ident) => ident.to_string(),
+            FieldName::Index(i) => i.to_string(),
+        }
+    }
+}
+
+struct FieldInfo {
+    field_name: FieldName,
+    ty: syn::Type,
+
+    select: Option<String>,
+    attr: Option<String>,
+}
+
+impl FieldInfo {
+    fn field_name_and_value(&self, token: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+        match &self.field_name {
+            FieldName::Named(id) => quote!(#id: #token),
+            FieldName::Index(i) => {
+                let i = syn::Index::from(*i);
+                quote!(#i: #token)
+            }
+        }
+    }
+
+    fn source(&self) -> Result<Source, syn::Error> {
+        match &self.select {
             Some(selector) => {
                 // check selector validity at compile time
-                if Selector::parse(selector).is_err() {
-                    let err = syn::Error::new(
+                Selector::parse(selector).map_err(|_| {
+                    syn::Error::new(
                         // TODO highlight the span of macro attribute, not field ident and type
-                        self.ident
-                            .as_ref()
-                            .and_then(|id| id.span().join(self.ty.span()))
-                            .unwrap_or_else(|| self.ty.span()),
+                        match &self.field_name {
+                            FieldName::Named(ident) => ident.span().join(self.ty.span()),
+                            FieldName::Index(_) => None,
+                        }
+                        .unwrap_or_else(|| self.ty.span()),
                         format!("invalid css selector: `{}`", selector),
                     )
-                    .to_compile_error();
-                    return token_builder(err);
-                }
-                quote!(::h2s::macro_utils::select::<N>(source,#selector)?)
+                })?;
+                Ok(Source::Select(selector.to_string()))
             }
-            None => quote!(source.clone()),
-        };
-        let args = match &self.attr {
+            None => Ok(Source::Root),
+        }
+    }
+
+    fn args(&self) -> proc_macro2::TokenStream {
+        match &self.attr {
             Some(attr) => {
                 quote!(& ::h2s::macro_utils::extract_attribute(#attr))
             }
             None => quote!(()),
-        };
-
-        let selector = self
-            .select
-            .as_ref()
-            .map(|a| quote!(::std::option::Option::Some(#a)))
-            .unwrap_or_else(|| quote!(::std::option::Option::None));
-
-        let field_name = self
-            .ident
-            .as_ref()
-            .map(|id| id.to_string())
-            .unwrap_or_else(|| index.to_string());
-
-        token_builder(
-            quote!(::h2s::macro_utils::adjust_and_parse::<N,_,_,_>(#source, #args, #selector, #field_name)?),
-        )
+        }
     }
+}
+
+enum Source {
+    Select(String),
+    Root,
 }
