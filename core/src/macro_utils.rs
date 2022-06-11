@@ -1,9 +1,8 @@
 //! A set of internal utility methods that will be used in the auto-generated code on `FromHtml` derive macro.
 //! You wouldn't call these methods directly in your code.
 
-use crate::{
-    ExtractAttribute, FromHtml, HtmlElementRef, ParseError, Position, Selector, StructureAdjuster,
-};
+use crate::from_html::ExtractAttribute;
+use crate::{FromHtml, HtmlElementRef, ParseError, Position, Selector, StructureAdjuster};
 
 pub fn extract_attribute(attr: &str) -> ExtractAttribute {
     ExtractAttribute(attr.to_string())
@@ -11,7 +10,9 @@ pub fn extract_attribute(attr: &str) -> ExtractAttribute {
 
 pub fn select<N: HtmlElementRef>(source: &N, selector: &'static str) -> Result<Vec<N>, ParseError> {
     // TODO cache parsed selector
-    let selector = N::Selector::parse(selector).map_err(ParseError::Unexpected)?;
+    let selector = N::Selector::parse(selector).map_err(|_| {
+        ParseError::Root("unexpected error occurs while parsing CSS selector".to_string())
+    })?;
     Ok(source.select(&selector))
 }
 
@@ -29,10 +30,10 @@ pub fn adjust_and_parse<
 ) -> Result<H, ParseError> {
     source
         .try_adjust()
-        .map_err(ParseError::StructureUnmatched)
+        .map_err(|e| ParseError::Root(format!("failed to adjust structure: {e}")))
         .and_then(|s| H::from_html(&s, args))
         .map_err(|e| ParseError::Child {
-            context: Position::Struct {
+            position: Position::Struct {
                 selector: selector.map(|a| a.to_string()),
                 field_name: field_name.to_string(),
             },

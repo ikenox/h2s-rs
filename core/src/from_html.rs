@@ -11,6 +11,9 @@ impl<'a> FromHtml<'a, ()> for String {
     }
 }
 
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct ExtractAttribute(pub String);
+
 impl<'a> FromHtml<'a, &'a ExtractAttribute> for String {
     type Source<N: HtmlElementRef> = N;
 
@@ -21,7 +24,7 @@ impl<'a> FromHtml<'a, &'a ExtractAttribute> for String {
         source
             .get_attribute(&args.0)
             .map(|s| s.to_string())
-            .ok_or_else(|| ParseError::AttributeNotFound(args.0.clone()))
+            .ok_or_else(|| ParseError::Root(format!("attribute `{}` not found", args.0)))
     }
 }
 
@@ -34,7 +37,7 @@ impl<'a, B: Copy + 'a, T: FromHtml<'a, B>, const A: usize> FromHtml<'a, B> for [
             .enumerate()
             .map(|(i, n)| {
                 T::from_html(n, args).map_err(|e| ParseError::Child {
-                    context: Position::Index(i),
+                    position: Position::Index(i),
                     error: Box::new(e),
                 })
             })
@@ -47,9 +50,9 @@ impl<'a, B: Copy + 'a, T: FromHtml<'a, B>, const A: usize> FromHtml<'a, B> for [
                 })
             })?;
 
-        // this conversion should never fail
+        // this conversion should never fail because it has been already checked at build time
         v.try_into().map_err(|_| {
-            ParseError::Unexpected("vec to array conversion unexpectedly failed".to_string())
+            ParseError::Root("vec to array conversion is unexpectedly failed".to_string())
         })
     }
 }
@@ -63,7 +66,7 @@ impl<'a, A: Copy + 'a, T: FromHtml<'a, A>> FromHtml<'a, A> for Vec<T> {
             .enumerate()
             .map(|(i, n)| {
                 T::from_html(n, args).map_err(|e| ParseError::Child {
-                    context: Position::Index(i),
+                    position: Position::Index(i),
                     error: Box::new(e),
                 })
             })
@@ -97,7 +100,7 @@ mod test {
     use mock::*;
 
     fn err() -> ParseError {
-        ParseError::Unexpected("test error".to_string())
+        ParseError::Root("test error".to_string())
     }
 
     #[test]
@@ -114,7 +117,7 @@ mod test {
                 (),
             ),
             Err(ParseError::Child {
-                context: Position::Index(1),
+                position: Position::Index(1),
                 error: Box::new(err())
             }),
             "returned error if one of the vec items fails to apply"
@@ -143,13 +146,16 @@ mod test {
     }
 
     #[test]
-    fn string() {
+    fn string_inner_text() {
         assert_eq!(
             String::from_html(&MockElement::new("text"), ()),
             Ok("text".to_string()),
             "inner text content will be extracted"
         );
+    }
 
+    #[test]
+    fn string_attribute() {
         assert_eq!(
             String::from_html(
                 &MockElement {
@@ -162,7 +168,21 @@ mod test {
             ),
             Ok("bar".to_string()),
             "correct attribute value will be extracted"
-        )
+        );
+
+        assert_eq!(
+            String::from_html(
+                &MockElement {
+                    attributes: hashmap! {
+                        "foo".to_string() => "bar".to_string(),
+                    },
+                    ..Default::default()
+                },
+                &ExtractAttribute("aaa".to_string())
+            ),
+            Err(ParseError::Root("attribute `aaa` not found".to_string())),
+            "error when element doesn't have the specified attribute"
+        );
     }
 
     mod mock {

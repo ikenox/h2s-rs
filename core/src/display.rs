@@ -4,16 +4,12 @@ use std::fmt::{Display, Formatter};
 impl Display for ParseError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::StructureUnmatched(e) => {
-                write!(f, "structure unmatched: {e}")
+            Self::Root(detail) => {
+                write!(f, "{detail}")
             }
-            Self::AttributeNotFound(attr) => {
-                write!(f, "attribute `{attr}` is not found")
+            Self::Child { position, error } => {
+                write!(f, "{position} -> {error}")
             }
-            Self::Child { context, error } => {
-                write!(f, "{context} -> {error}")
-            }
-            Self::Unexpected(detail) => write!(f, "unexpected error: {}", detail),
         }
     }
 }
@@ -25,15 +21,13 @@ impl Display for Position {
             Position::Struct {
                 selector,
                 field_name,
-            } => write!(
-                f,
-                "({field_name}) {}",
+            } => {
                 if let Some(s) = selector {
-                    format!("@ `{s}`")
+                    write!(f, "({field_name})[{s}]")
                 } else {
-                    "".to_string()
+                    write!(f, "{field_name}")
                 }
-            ),
+            }
         }
     }
 }
@@ -41,5 +35,59 @@ impl Display for Position {
 impl Display for StructureUnmatched {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "structure is different from expected: {}", self.0)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn position() {
+        let case = vec![
+            (Position::Index(3), "[3]"),
+            (
+                Position::Struct {
+                    selector: Some(".a > .b".to_string()),
+                    field_name: "bar".to_string(),
+                },
+                r#"(bar)[.a > .b]"#,
+            ),
+            (
+                Position::Struct {
+                    selector: None,
+                    field_name: "bar".to_string(),
+                },
+                "bar",
+            ),
+        ];
+
+        for (p, msg) in case {
+            assert_eq!(format!("{}", p).as_str(), msg);
+        }
+    }
+
+    #[test]
+    fn parse_error() {
+        let case = vec![
+            // root
+            (ParseError::Root("foo".to_string()), "foo".to_string()),
+            // child
+            {
+                let p = Position::Index(3);
+                let e = ParseError::Root("foo".to_string());
+                (
+                    ParseError::Child {
+                        position: p.clone(),
+                        error: Box::new(e.clone()),
+                    },
+                    format!("{p} -> {e}"),
+                )
+            },
+        ];
+
+        for (e, msg) in case {
+            assert_eq!(format!("{}", e), msg);
+        }
     }
 }
