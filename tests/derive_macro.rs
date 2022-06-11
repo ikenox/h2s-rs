@@ -152,6 +152,66 @@ fn nested_struct() {
 }
 
 #[test]
+fn struct_unnamed() {
+    #[derive(FromHtml, Debug, Eq, PartialEq)]
+    pub struct Struct(
+        // Single Struct, parse root element itself
+        #[h2s] StructInner1,
+        // Single Struct, select
+        #[h2s(select = ".b")] StructInner2,
+        // Vec
+        #[h2s(select = ".c")] Vec<StructInner2>,
+        // Option - Some
+        #[h2s(select = ".d")] Option<StructInner2>,
+        // Option - None
+        #[h2s(select = ".class-that-does-not-exist")] Option<StructInner2>,
+        // Array
+        #[h2s(select = ".e")] [StructInner2; 3],
+    );
+
+    #[derive(FromHtml, Debug, Eq, PartialEq)]
+    pub struct StructInner1(#[h2s(attr = "lang")] String);
+
+    #[derive(FromHtml, Debug, Eq, PartialEq)]
+    pub struct StructInner2(#[h2s(select = "span")] String);
+
+    let html = r#"
+<!DOCTYPE html>
+<html lang="a">
+<body>
+<div class="b"><span>bvalue</span></div>
+
+<div class="c"><span>cvalue1</span></div>
+<div class="c"><span>cvalue2</span></div>
+<div class="c"><span>cvalue3</span></div>
+
+<div class="d"><span>dvalue</span></div>
+
+<div class="e"><span>evalue1</span></div>
+<div class="e"><span>evalue2</span></div>
+<div class="e"><span>evalue3</span></div>
+</body>
+</html>
+    "#;
+
+    let res = h2s::util::parse::<Struct>(html);
+
+    let si2 = |s: &str| StructInner2(s.to_string());
+
+    assert_eq!(
+        res,
+        Ok(Struct(
+            StructInner1(s("a")),
+            si2("bvalue"),
+            vec![si2("cvalue1"), si2("cvalue2"), si2("cvalue3")],
+            Some(si2("dvalue")),
+            None,
+            [si2("evalue1"), si2("evalue2"), si2("evalue3")],
+        ))
+    )
+}
+
+#[test]
 #[ignore]
 fn invalid_macro_attribute_combination() {
     // TODO

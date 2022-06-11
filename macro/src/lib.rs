@@ -4,6 +4,7 @@ use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use scraper::Selector;
 use syn::parse_macro_input;
+use syn::spanned::Spanned;
 
 #[proc_macro_derive(FromHtml, attributes(h2s))]
 pub fn derive(input: TokenStream) -> TokenStream {
@@ -28,6 +29,7 @@ struct FromHtmlStructReceiver {
 #[darling(attributes(h2s))]
 struct H2sFieldReceiver {
     ident: Option<syn::Ident>,
+    ty: syn::Type,
 
     select: Option<String>,
     attr: Option<String>,
@@ -44,7 +46,8 @@ impl ToTokens for FromHtmlStructReceiver {
             Data::Struct(fields) => {
                 let field_and_values = fields
                     .into_iter()
-                    .map(H2sFieldReceiver::build_field_token_stream);
+                    .enumerate()
+                    .map(|(i, r)| r.build_field_token_stream(i));
                 quote! {
                     impl <'a> ::h2s::FromHtml<'a, ()> for #ident {
                         type Source<N: ::h2s::HtmlElementRef> = N;
@@ -70,24 +73,30 @@ impl ToTokens for FromHtmlStructReceiver {
 }
 
 impl H2sFieldReceiver {
-    fn build_field_token_stream(&self) -> proc_macro2::TokenStream {
+    fn build_field_token_stream(&self, index: usize) -> proc_macro2::TokenStream {
         // all fields must be named
-        let ident: &syn::Ident = self
-            .ident
-            .as_ref()
-            .expect("All fields of the struct deriving FromHtml must have a field name");
-        let field_name = ident.to_string();
+        let token_builder = |t| match &self.ident {
+            Some(id) => quote!(#id: #t),
+            None => {
+                let i = syn::Index::from(index);
+                quote!(#i: #t)
+            }
+        };
 
         let source = match &self.select {
             Some(selector) => {
                 // check selector validity at compile time
                 if let Err(_) = Selector::parse(selector) {
                     let err = syn::Error::new(
-                        ident.span(), // TODO highlight the span of macro attribute, not field ident
+                        // TODO highlight the span of macro attribute, not field ident and type
+                        match &self.ident {
+                            Some(id) => id.span(),
+                            None => self.ty.span(),
+                        },
                         format!("invalid css selector: `{}`", selector),
                     )
                     .to_compile_error();
-                    return quote!(#ident: #err);
+                    return token_builder(err);
                 }
                 quote!(::h2s::macro_utils::select::<N>(source,#selector)?)
             }
@@ -105,8 +114,15 @@ impl H2sFieldReceiver {
             .as_ref()
             .map(|a| quote!(::std::option::Option::Some(#a)))
             .unwrap_or_else(|| quote!(::std::option::Option::None));
-        quote!(
-            #ident: ::h2s::macro_utils::adjust_and_parse::<N,_,_,_>(#source, #args, #selector, #field_name)?
+
+        let field_name = self
+            .ident
+            .as_ref()
+            .map(|id| id.to_string())
+            .unwrap_or_else(|| index.to_string());
+
+        token_builder(
+            quote!(::h2s::macro_utils::adjust_and_parse::<N,_,_,_>(#source, #args, #selector, #field_name)?),
         )
     }
 }
