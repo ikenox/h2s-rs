@@ -54,7 +54,7 @@ impl ToTokens for FromHtmlStructReceiver {
                         attr: r.attr.clone(),
                     })
                     .collect::<Vec<_>>();
-                impl_token_stream(ident, fields.iter())
+                build_implementation_token(ident, fields.iter())
             }
             Data::Enum(_) => {
                 syn::Error::new(ident.span(), "FromHtml doesn't support enum".to_string())
@@ -66,11 +66,17 @@ impl ToTokens for FromHtmlStructReceiver {
     }
 }
 
-fn impl_token_stream<'a>(
+fn build_implementation_token<'a>(
     ident: &syn::Ident,
     fields: impl Iterator<Item = &'a FieldInfo>,
 ) -> proc_macro2::TokenStream {
-    let field_and_values = fields.map(field_name_and_value).collect::<Vec<_>>();
+    let field_and_values = fields
+        .map(|f| {
+            let v = build_field_value_token(f);
+            let ident = f.field_name.field();
+            quote!(#ident: #v)
+        })
+        .collect::<Vec<_>>();
     quote! {
         impl <'a> ::h2s::FromHtml<'a, ()> for #ident {
             type Source<N: ::h2s::HtmlElementRef> = N;
@@ -86,13 +92,13 @@ fn impl_token_stream<'a>(
     }
 }
 
-fn field_name_and_value(f: &FieldInfo) -> proc_macro2::TokenStream {
+fn build_field_value_token(f: &FieldInfo) -> proc_macro2::TokenStream {
     let source = match f.source() {
         Ok(Source::Root) => quote!(source.clone()),
         Ok(Source::Select(selector)) => {
             quote!(::h2s::macro_utils::select::<N>(source,#selector)?)
         }
-        Err(e) => return f.field_name_and_value(e.to_compile_error()),
+        Err(e) => return e.to_compile_error(),
     };
 
     let args = f.args();
@@ -105,9 +111,7 @@ fn field_name_and_value(f: &FieldInfo) -> proc_macro2::TokenStream {
 
     let field_name = f.field_name.as_string();
 
-    f.field_name_and_value(
-        quote!(::h2s::macro_utils::adjust_and_parse::<N,_,_,_>(#source, #args, #selector, #field_name)?),
-    )
+    quote!(::h2s::macro_utils::adjust_and_parse::<N,_,_,_>(#source, #args, #selector, #field_name)?)
 }
 
 enum FieldName {
@@ -122,6 +126,24 @@ impl FieldName {
             FieldName::Index(i) => i.to_string(),
         }
     }
+
+    fn span_with_type(&self, ty: &syn::Type) -> proc_macro2::Span {
+        match &self {
+            FieldName::Named(ident) => ident.span().join(ty.span()),
+            FieldName::Index(_) => None,
+        }
+        .unwrap_or_else(|| ty.span())
+    }
+
+    fn field(&self) -> proc_macro2::TokenStream {
+        match &self {
+            FieldName::Named(id) => quote!(#id),
+            FieldName::Index(i) => {
+                let i = syn::Index::from(*i);
+                quote!(#i)
+            }
+        }
+    }
 }
 
 struct FieldInfo {
@@ -133,16 +155,6 @@ struct FieldInfo {
 }
 
 impl FieldInfo {
-    fn field_name_and_value(&self, token: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
-        match &self.field_name {
-            FieldName::Named(id) => quote!(#id: #token),
-            FieldName::Index(i) => {
-                let i = syn::Index::from(*i);
-                quote!(#i: #token)
-            }
-        }
-    }
-
     fn source(&self) -> Result<Source, syn::Error> {
         match &self.select {
             Some(selector) => {
@@ -150,11 +162,7 @@ impl FieldInfo {
                 Selector::parse(selector).map_err(|_| {
                     syn::Error::new(
                         // TODO highlight the span of macro attribute, not field ident and type
-                        match &self.field_name {
-                            FieldName::Named(ident) => ident.span().join(self.ty.span()),
-                            FieldName::Index(_) => None,
-                        }
-                        .unwrap_or_else(|| self.ty.span()),
+                        self.field_name.span_with_type(&self.ty),
                         format!("invalid css selector: `{}`", selector),
                     )
                 })?;
