@@ -51,7 +51,7 @@ impl ToTokens for FromHtmlStructReceiver {
                         field_name: r
                             .ident
                             .clone()
-                            .map(|id| FieldName::Named(id))
+                            .map(FieldName::Named)
                             .unwrap_or_else(|| FieldName::Index(i)),
                         select: r.select.clone(),
                         ty: r.ty.clone(),
