@@ -3,8 +3,7 @@ use darling::{FromDeriveInput, FromField};
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use scraper::Selector;
-use syn::spanned::Spanned;
-use syn::{parse_macro_input, Type};
+use syn::parse_macro_input;
 
 #[proc_macro_derive(FromHtml, attributes(h2s))]
 pub fn derive(input: TokenStream) -> TokenStream {
@@ -29,7 +28,6 @@ struct FromHtmlStructReceiver {
 #[darling(attributes(h2s))]
 struct H2sFieldReceiver {
     ident: Option<syn::Ident>,
-    ty: Type,
 
     select: Option<String>,
     attr: Option<String>,

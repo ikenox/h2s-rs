@@ -84,7 +84,7 @@ fn nested_struct() {
     #[derive(FromHtml, Debug, Eq, PartialEq)]
     pub struct Struct {
         // Single Struct, parse root element itself
-        #[h2s()]
+        #[h2s]
         a: StructInner1,
         // Single Struct, select
         #[h2s(select = ".b")]

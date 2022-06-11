@@ -40,7 +40,7 @@ impl Display for StructureUnmatched {
 
 #[cfg(test)]
 mod test {
-    use crate::{ParseError, Position, StructureUnmatched};
+    use super::*;
 
     #[test]
     fn position() {
