@@ -83,7 +83,7 @@ impl H2sFieldReceiver {
                 // check selector validity at compile time
                 if let Err(_) = Selector::parse(selector) {
                     let err = syn::Error::new(
-                        ident.span(), // TODO highlight the macro attribute, not field ident
+                        ident.span(), // TODO highlight the span of macro attribute, not field ident
                         format!("invalid css selector: `{}`", selector),
                     )
                     .to_compile_error();
