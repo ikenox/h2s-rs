@@ -1,30 +1,41 @@
+use crate::FromText;
 use crate::*;
 
-impl<'a> FromHtml<'a, ()> for String {
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct ExtractAttribute(pub String);
+
+impl<'a, S: FromText> FromHtml<'a, ()> for S {
     type Source<N: HtmlElementRef> = N;
 
     fn from_html<N: HtmlElementRef>(
         source: &Self::Source<N>,
         _args: (),
     ) -> Result<Self, ParseError> {
-        Ok(source.text_contents())
+        let s = source.text_contents();
+        S::from_text(&s).map_err(|e| ParseError::Root {
+            message: format!("failed to parse string `{}`", s),
+            cause: Some(format!("{}", e)),
+        })
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct ExtractAttribute(pub String);
-
-impl<'a> FromHtml<'a, &'a ExtractAttribute> for String {
+impl<'a, S: FromText> FromHtml<'a, &'a ExtractAttribute> for S {
     type Source<N: HtmlElementRef> = N;
 
     fn from_html<N: HtmlElementRef>(
         source: &Self::Source<N>,
         args: &'a ExtractAttribute,
     ) -> Result<Self, ParseError> {
-        source
+        let s = source
             .get_attribute(&args.0)
-            .map(|s| s.to_string())
-            .ok_or_else(|| ParseError::Root(format!("attribute `{}` not found", args.0)))
+            .ok_or_else(|| ParseError::Root {
+                message: format!("attribute `{}` not found", args.0),
+                cause: None,
+            })?;
+        S::from_text(s).map_err(|e| ParseError::Root {
+            message: format!("failed to parse string `{}`", s),
+            cause: Some(format!("{e}")),
+        })
     }
 }
 
@@ -51,8 +62,9 @@ impl<'a, B: Copy + 'a, T: FromHtml<'a, B>, const A: usize> FromHtml<'a, B> for [
             })?;
 
         // this conversion should never fail because it has been already checked at build time
-        v.try_into().map_err(|_| {
-            ParseError::Root("vec to array conversion is unexpectedly failed".to_string())
+        v.try_into().map_err(|_| ParseError::Root {
+            message: "vec to array conversion is unexpectedly failed".to_string(),
+            cause: None,
         })
     }
 }
@@ -100,7 +112,10 @@ mod test {
     use mock::*;
 
     fn err() -> ParseError {
-        ParseError::Root("test error".to_string())
+        ParseError::Root {
+            message: "test error".to_string(),
+            cause: None,
+        }
     }
 
     #[test]
@@ -180,7 +195,10 @@ mod test {
                 },
                 &ExtractAttribute("aaa".to_string())
             ),
-            Err(ParseError::Root("attribute `aaa` not found".to_string())),
+            Err(ParseError::Root {
+                message: "attribute `aaa` not found".to_string(),
+                cause: None
+            }),
             "error when element doesn't have the specified attribute"
         );
     }

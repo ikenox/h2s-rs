@@ -2,16 +2,22 @@
 mod adjuster;
 mod display;
 mod from_html;
+pub mod from_text;
 mod html_backend;
 pub mod macro_utils;
 pub mod util;
 
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 
 pub trait FromHtml<'a, A: 'a>: Sized {
     type Source<N: HtmlElementRef>;
 
     fn from_html<N: HtmlElementRef>(source: &Self::Source<N>, args: A) -> Result<Self, ParseError>;
+}
+
+pub trait FromText: Sized {
+    type Err: Display + Debug + Sized + 'static;
+    fn from_text(s: &str) -> Result<Self, Self::Err>;
 }
 
 // TODO not force to clone
@@ -30,9 +36,13 @@ pub trait StructureAdjuster<N> {
     fn try_adjust(self) -> Result<N, StructureUnmatched>;
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ParseError {
-    Root(String),
+    Root {
+        message: String,
+        // TODO hold Box<dyn SomeErrorTrait>
+        cause: Option<String>,
+    },
     Child {
         position: Position,
         error: Box<ParseError>,
