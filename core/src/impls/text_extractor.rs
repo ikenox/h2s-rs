@@ -78,15 +78,6 @@ mod test {
         pub attributes: HashMap<String, String>,
     }
 
-    impl MockElement {
-        pub fn new<S: AsRef<str>>(s: S) -> Self {
-            Self {
-                text_contents: s.as_ref().to_string(),
-                ..Default::default()
-            }
-        }
-    }
-
     pub struct SelectorMock;
 
     impl Selector for SelectorMock {
