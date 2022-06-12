@@ -1,6 +1,6 @@
 #![feature(generic_associated_types)]
 
-pub mod impls;
+mod impls;
 pub mod macro_utils;
 pub mod util;
 
@@ -33,6 +33,10 @@ pub trait StructureAdjuster<N> {
     fn try_adjust(self) -> Result<N, StructureUnmatched>;
 }
 
+pub trait TextExtractor {
+    fn extract<N: HtmlElementRef>(&self, source: &N) -> Result<String, TextExtractionFailed>;
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ParseError {
     Root {
@@ -57,3 +61,15 @@ pub enum Position {
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct StructureUnmatched(String);
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct TextExtractionFailed(String);
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct ExtractAttribute(pub String);
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct ExtractInnerText;
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct DefaultArg;

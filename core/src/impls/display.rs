@@ -35,7 +35,13 @@ impl Display for Position {
 
 impl Display for StructureUnmatched {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "structure is different from expected: {}", self.0)
+        write!(f, "{}", self.0)
+    }
+}
+
+impl Display for TextExtractionFailed {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 

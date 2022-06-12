@@ -1,7 +1,8 @@
 //! A set of internal utility methods that will be used in the auto-generated code on `FromHtml` derive macro.
+//! These methods are shorthands to reduce codes in the `quote!` macro. It improves development experience with IDE.
 //! You wouldn't call these methods directly in your code.
 
-use crate::impls::from_html::ExtractAttribute;
+use crate::ExtractAttribute;
 use crate::{FromHtml, HtmlElementRef, ParseError, Position, Selector, StructureAdjuster};
 
 pub fn extract_attribute(attr: &str) -> ExtractAttribute {

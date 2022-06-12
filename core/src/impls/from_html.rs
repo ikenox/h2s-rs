@@ -1,40 +1,20 @@
 use crate::FromText;
 use crate::*;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct ExtractAttribute(pub String);
-
-impl<'a, S: FromText> FromHtml<'a, ()> for S {
+impl<'a, A: TextExtractor + 'a, S: FromText> FromHtml<'a, &'a A> for S {
     type Source<N: HtmlElementRef> = N;
 
     fn from_html<N: HtmlElementRef>(
         source: &Self::Source<N>,
-        _args: (),
+        args: &'a A,
     ) -> Result<Self, ParseError> {
-        let s = source.text_contents();
-        S::from_text(&s).map_err(|e| ParseError::Root {
-            message: format!("failed to parse string `{}`", s),
+        let txt = args.extract(source).map_err(|e| ParseError::Root {
+            message: format!("failed to extract text: {}", e),
+            cause: None,
+        })?;
+        S::from_text(&txt).map_err(|e| ParseError::Root {
+            message: format!("failed to parse string: `{}`", txt),
             cause: Some(format!("{}", e)),
-        })
-    }
-}
-
-impl<'a, S: FromText> FromHtml<'a, &'a ExtractAttribute> for S {
-    type Source<N: HtmlElementRef> = N;
-
-    fn from_html<N: HtmlElementRef>(
-        source: &Self::Source<N>,
-        args: &'a ExtractAttribute,
-    ) -> Result<Self, ParseError> {
-        let s = source
-            .get_attribute(&args.0)
-            .ok_or_else(|| ParseError::Root {
-                message: format!("attribute `{}` not found", args.0),
-                cause: None,
-            })?;
-        S::from_text(s).map_err(|e| ParseError::Root {
-            message: format!("failed to parse string `{}`", s),
-            cause: Some(format!("{e}")),
         })
     }
 }
@@ -108,7 +88,6 @@ impl<'a, A: 'a, T: FromHtml<'a, A>> FromHtml<'a, A> for Option<T> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use maplit::hashmap;
     use mock::*;
 
     fn err() -> ParseError {
@@ -161,45 +140,21 @@ mod test {
     }
 
     #[test]
-    fn string_inner_text() {
-        assert_eq!(
-            String::from_html(&MockElement::new("text"), ()),
-            Ok("text".to_string()),
-            "inner text content will be extracted"
-        );
-    }
-
-    #[test]
-    fn string_attribute() {
-        assert_eq!(
-            String::from_html(
-                &MockElement {
-                    attributes: hashmap! {
-                        "foo".to_string() => "bar".to_string(),
-                    },
-                    ..Default::default()
-                },
-                &ExtractAttribute("foo".to_string())
-            ),
-            Ok("bar".to_string()),
-            "correct attribute value will be extracted"
-        );
+    fn from_text() {
+        struct MockExtractor {}
+        impl TextExtractor for MockExtractor {
+            fn extract<N: HtmlElementRef>(
+                &self,
+                source: &N,
+            ) -> Result<String, TextExtractionFailed> {
+                Ok("ok".to_string())
+            }
+        }
 
         assert_eq!(
-            String::from_html(
-                &MockElement {
-                    attributes: hashmap! {
-                        "foo".to_string() => "bar".to_string(),
-                    },
-                    ..Default::default()
-                },
-                &ExtractAttribute("aaa".to_string())
-            ),
-            Err(ParseError::Root {
-                message: "attribute `aaa` not found".to_string(),
-                cause: None
-            }),
-            "error when element doesn't have the specified attribute"
+            String::from_html(&MockElement::new("text"), &MockExtractor {}),
+            Ok("ok".to_string()),
+            "the extraction result is returned",
         );
     }
 
