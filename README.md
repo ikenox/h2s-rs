@@ -97,21 +97,20 @@ fn main() {
 
 You can see more examples at [examples/](./examples/).
 
-## Supported types
+## Built-in supported types
 
-### Built-in supported types
-
-By default, you can use the following types as a field value.
+By default, you can use the following types as a field value of structs derived `FromHtml`.
 
 - Scalar types
   - `String`
   - Numeric types ( `usize`, `i64`, `NonZeroU32`, ... )
-  - etc. You can see all supported types at [here](./core/src/from_text.rs)
+  - Structs that derive or implement `FromHtml` trait
+  - [And more](./core/src/from_text.rs)
 - Container types (where `T` is another supported type)
-  - `T`
   - `[T;N]`
   - `Option<T>`
   - `Vec<T>`
-  - You can see all supported container types at [here](./core/src/from_html.rs)
 
-You can also extend any types to be usable by implementing `FromHtml` trait yourself.
+### Use custom types
+
+You can also extend any types to be usable by implementing `FromHtml` or `FromText` trait yourself.

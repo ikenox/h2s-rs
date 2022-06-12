@@ -1,9 +1,6 @@
 use crate::FromText;
 use crate::*;
 
-
-
-
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ExtractAttribute(pub String);
 
