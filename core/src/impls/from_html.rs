@@ -88,31 +88,37 @@ impl<'a, A: 'a, T: FromHtml<'a, A>> FromHtml<'a, A> for Option<T> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use mock::*;
 
-    fn err() -> ParseError {
-        ParseError::Root {
-            message: "test error".to_string(),
+    fn ok<T>(s: &str) -> Result<String, T> {
+        Ok(s.to_string())
+    }
+
+    fn err<T>(s: &str) -> Result<T, ParseError> {
+        Err(ParseError::Root {
+            message: s.to_string(),
             cause: None,
-        }
+        })
     }
 
     #[test]
     fn vec() {
         assert_eq!(
-            Vec::<FromHtmlImpl>::from_html(&vec![MockElement::new("a"), MockElement::new("b")], ()),
+            Vec::<FromHtmlImpl>::from_html::<MockElement>(
+                &vec![MockElement(ok("a")), MockElement(ok("b"))],
+                ()
+            ),
             Ok(vec![FromHtmlImpl::new("a"), FromHtmlImpl::new("b")]),
             "the method is applied for each items of the vec"
         );
 
         assert_eq!(
-            Vec::<FromHtmlImpl>::from_html(
-                &vec![MockElement::new("a"), MockElement::new("error")],
+            Vec::<FromHtmlImpl>::from_html::<MockElement>(
+                &vec![MockElement(Ok("a".into())), MockElement(err("err!"))],
                 (),
             ),
             Err(ParseError::Child {
                 position: Position::Index(1),
-                error: Box::new(err())
+                error: Box::new(err::<()>("err!").unwrap_err())
             }),
             "returned error if one of the vec items fails to apply"
         );
@@ -121,8 +127,8 @@ mod test {
     #[test]
     fn option() {
         assert_eq!(
-            Option::<FromHtmlImpl>::from_html(&Some(MockElement::new("a")), ()),
-            Ok(Some(FromHtmlImpl::new("a"))),
+            Option::<FromHtmlImpl>::from_html::<MockElement>(&Some(MockElement(ok("ok!"))), ()),
+            Ok(Some(FromHtmlImpl::new("ok!"))),
             "the method is applied for is present"
         );
 
@@ -133,8 +139,8 @@ mod test {
         );
 
         assert_eq!(
-            Option::<FromHtmlImpl>::from_html(&Some(MockElement::new("error")), ()),
-            Err(err()),
+            Option::<FromHtmlImpl>::from_html::<MockElement>(&Some(MockElement(err("err!"))), ()),
+            err("err!"),
             "returned error if failed to apply"
         );
     }
@@ -147,80 +153,60 @@ mod test {
                 &self,
                 _source: &N,
             ) -> Result<String, TextExtractionFailed> {
-                Ok("ok".to_string())
+                ok("ok!")
             }
         }
 
         assert_eq!(
-            String::from_html(&MockElement::new("text"), &MockExtractor {}),
-            Ok("ok".to_string()),
+            String::from_html(&MockElement(ok("")), &MockExtractor {}),
+            ok("ok!"),
             "the extraction result is returned",
         );
     }
 
-    mod mock {
-        use super::*;
-        use std::collections::HashMap;
+    #[derive(Debug, Eq, PartialEq, Clone)]
+    pub struct FromHtmlImpl(String);
 
-        #[derive(Debug, Eq, PartialEq, Clone)]
-        pub struct FromHtmlImpl(String);
-        impl FromHtmlImpl {
-            pub fn new<S: AsRef<str>>(s: S) -> Self {
-                Self(s.as_ref().to_string())
-            }
+    impl FromHtmlImpl {
+        pub fn new<S: AsRef<str>>(s: S) -> Self {
+            Self(s.as_ref().to_string())
+        }
+    }
+
+    impl<'a> FromHtml<'a, ()> for FromHtmlImpl {
+        type Source<N: HtmlElementRef> = MockElement;
+
+        fn from_html<N: HtmlElementRef>(
+            source: &MockElement,
+            _args: (),
+        ) -> Result<Self, ParseError> {
+            source.clone().0.map(FromHtmlImpl)
+        }
+    }
+
+    #[derive(Clone)]
+    pub struct MockElement(Result<String, ParseError>);
+    pub struct MockSelector;
+
+    impl Selector for MockSelector {
+        fn parse<S: AsRef<str>>(s: S) -> Result<Self, String> {
+            todo!()
+        }
+    }
+
+    impl HtmlElementRef for MockElement {
+        type Selector = MockSelector;
+
+        fn select(&self, sel: &Self::Selector) -> Vec<Self> {
+            todo!()
         }
 
-        impl<'a> FromHtml<'a, ()> for FromHtmlImpl {
-            type Source<N: HtmlElementRef> = N;
-
-            fn from_html<N: HtmlElementRef>(
-                source: &Self::Source<N>,
-                _args: (),
-            ) -> Result<Self, ParseError> {
-                if source.text_contents() == "error" {
-                    Err(err())
-                } else {
-                    Ok(FromHtmlImpl(source.text_contents()))
-                }
-            }
+        fn text_contents(&self) -> String {
+            todo!()
         }
 
-        #[derive(Clone, Default)]
-        pub struct MockElement {
-            pub text_contents: String,
-            pub attributes: HashMap<String, String>,
-        }
-        impl MockElement {
-            pub fn new<S: AsRef<str>>(s: S) -> Self {
-                Self {
-                    text_contents: s.as_ref().to_string(),
-                    ..Default::default()
-                }
-            }
-        }
-
-        pub struct SelectorMock;
-
-        impl Selector for SelectorMock {
-            fn parse<S: AsRef<str>>(_s: S) -> Result<Self, String> {
-                unimplemented!()
-            }
-        }
-
-        impl HtmlElementRef for MockElement {
-            type Selector = SelectorMock;
-
-            fn select(&self, _sel: &Self::Selector) -> Vec<Self> {
-                unimplemented!()
-            }
-
-            fn text_contents(&self) -> String {
-                self.text_contents.clone()
-            }
-
-            fn get_attribute<S: AsRef<str>>(&self, attr: S) -> Option<&str> {
-                self.attributes.get(attr.as_ref()).map(|a| a.as_str())
-            }
+        fn get_attribute<S: AsRef<str>>(&self, attr: S) -> Option<&str> {
+            todo!()
         }
     }
 }
