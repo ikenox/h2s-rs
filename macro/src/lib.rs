@@ -8,14 +8,10 @@ use syn::spanned::Spanned;
 
 #[proc_macro_derive(FromHtml, attributes(h2s))]
 pub fn derive(input: TokenStream) -> TokenStream {
-    let struct_receiver: FromHtmlStructReceiver =
-        match FromHtmlStructReceiver::from_derive_input(&parse_macro_input!(input)) {
-            Ok(a) => a,
-            Err(e) => {
-                return TokenStream::from(e.write_errors());
-            }
-        };
-    quote!(#struct_receiver).into()
+    match FromHtmlStructReceiver::from_derive_input(&parse_macro_input!(input)) {
+        Ok(struct_receiver) => quote!(#struct_receiver).into(),
+        Err(e) => TokenStream::from(e.write_errors()),
+    }
 }
 
 #[derive(Debug, FromDeriveInput)]
@@ -47,7 +43,7 @@ impl ToTokens for FromHtmlStructReceiver {
                 let field_and_values = fields
                     .into_iter()
                     .enumerate()
-                    .map(|(i, r)| r.build_field_token_stream(i));
+                    .map(|(i, r)| r.build_field_and_value(i));
                 quote! {
                     impl <'a> ::h2s::FromHtml<'a, ()> for #ident {
                         type Source<N: ::h2s::HtmlElementRef> = N;
@@ -73,21 +69,24 @@ impl ToTokens for FromHtmlStructReceiver {
 }
 
 impl H2sFieldReceiver {
-    fn build_field_token_stream(&self, index: usize) -> proc_macro2::TokenStream {
-        // all fields must be named
-        let token_builder = |t| match &self.ident {
-            Some(id) => quote!(#id: #t),
+    fn build_field_and_value(&self, index: usize) -> proc_macro2::TokenStream {
+        let (ident, field_name_str) = match &self.ident {
+            Some(id) => (quote!(#id), id.to_string()),
             None => {
                 let i = syn::Index::from(index);
-                quote!(#i: #t)
+                (quote!(#i), index.to_string())
             }
         };
+        let value = self.build_value(&field_name_str);
+        quote!(#ident: #value)
+    }
 
+    fn build_value(&self, field_name: &String) -> proc_macro2::TokenStream {
         let source = match &self.select {
             Some(selector) => {
                 // check selector validity at compile time
                 if Selector::parse(selector).is_err() {
-                    let err = syn::Error::new(
+                    return syn::Error::new(
                         // TODO highlight the span of macro attribute, not field ident and type
                         self.ident
                             .as_ref()
@@ -96,12 +95,12 @@ impl H2sFieldReceiver {
                         format!("invalid css selector: `{}`", selector),
                     )
                     .to_compile_error();
-                    return token_builder(err);
                 }
                 quote!(::h2s::macro_utils::select::<N>(source,#selector)?)
             }
             None => quote!(source.clone()),
         };
+
         let args = match &self.attr {
             Some(attr) => {
                 quote!(& ::h2s::macro_utils::extract_attribute(#attr))
@@ -115,14 +114,6 @@ impl H2sFieldReceiver {
             .map(|a| quote!(::std::option::Option::Some(#a)))
             .unwrap_or_else(|| quote!(::std::option::Option::None));
 
-        let field_name = self
-            .ident
-            .as_ref()
-            .map(|id| id.to_string())
-            .unwrap_or_else(|| index.to_string());
-
-        token_builder(
-            quote!(::h2s::macro_utils::adjust_and_parse::<N,_,_,_>(#source, #args, #selector, #field_name)?),
-        )
+        quote!(::h2s::macro_utils::adjust_and_parse::<N,_,_,_>(#source, #args, #selector, #field_name)?)
     }
 }
