@@ -145,7 +145,7 @@ mod test {
         impl TextExtractor for MockExtractor {
             fn extract<N: HtmlElementRef>(
                 &self,
-                source: &N,
+                _source: &N,
             ) -> Result<String, TextExtractionFailed> {
                 Ok("ok".to_string())
             }

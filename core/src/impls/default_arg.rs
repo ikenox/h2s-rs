@@ -2,7 +2,7 @@ use crate::{DefaultArg, ExtractInnerText};
 
 impl From<DefaultArg> for () {
     fn from(_: DefaultArg) -> Self {
-        ()
+        
     }
 }
 
