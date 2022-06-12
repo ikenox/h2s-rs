@@ -102,10 +102,12 @@ impl H2sFieldReceiver {
         };
 
         let args = match &self.attr {
+            // use specific one if specified
             Some(attr) => {
                 quote!(& ::h2s::macro_utils::extract_attribute(#attr))
             }
-            None => quote!(()),
+            // default
+            None => quote!(::h2s::DefaultArg.into()),
         };
 
         let selector = self
