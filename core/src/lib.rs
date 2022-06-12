@@ -9,7 +9,6 @@ pub mod util;
 
 use std::fmt::{Debug, Display};
 
-
 pub trait FromHtml<'a, A: 'a>: Sized {
     type Source<N: HtmlElementRef>;
 
