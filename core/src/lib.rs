@@ -1,9 +1,6 @@
 #![feature(generic_associated_types)]
-mod adjuster;
-mod display;
-mod from_html;
-pub mod from_text;
-mod html_backend;
+
+pub mod impls;
 pub mod macro_utils;
 pub mod util;
 
