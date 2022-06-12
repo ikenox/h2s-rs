@@ -105,7 +105,7 @@ By default, you can use the following types as a field value of structs derived 
   - `String`
   - Numeric types ( `usize`, `i64`, `NonZeroU32`, ... )
   - Structs that derive or implement `FromHtml` trait
-  - [And more](./core/src/from_text.rs)
+  - [And more](./core/src/impls/from_text.rs)
 - Container types (where `T` is another supported type)
   - `[T;N]`
   - `Option<T>`
