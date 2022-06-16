@@ -99,12 +99,12 @@ You can see more examples at [examples/](./examples/).
 
 ## Built-in supported types
 
-By default, you can use the following types as a field value of structs derived `FromHtml`.
+By default, you can use the following types as a field value of `FromHtml`-derived structs.
 
 - Scalar types
   - `String`
   - Numeric types ( `usize`, `i64`, `NonZeroU32`, ... )
-  - Structs that derive or implement `FromHtml` trait
+  - Structs that is derived/implemented `FromHtml` trait
   - [And more](./core/src/impls/from_text.rs)
 - Container types (where `T` is another supported type)
   - `[T;N]`
