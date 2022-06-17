@@ -95,8 +95,6 @@ fn main() {
 }
 ```
 
-You can see more examples at [examples/](./examples/).
-
 ## Built-in supported types
 
 By default, you can use the following types as a field value of `FromHtml`-derived structs.
