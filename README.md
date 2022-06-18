@@ -99,12 +99,11 @@ fn main() {
 
 By default, you can use the following types as a field value of `FromHtml`-derived structs.
 
-- Scalar types
-  - `String`
-  - Numeric types ( `usize`, `i64`, `NonZeroU32`, ... )
-  - Structs that are derived/implemented `FromHtml` trait
-  - Structs that are implemented `FromText` trait
-  - [And more](./core/src/impls/from_text.rs)
+- `String`
+- Numeric types ( `usize`, `i64`, `NonZeroU32`, ... )
+- Structs that are derived/implemented `FromHtml` trait
+- Structs that are implemented `FromText` trait
+- [And more](./core/src/impls/from_text.rs)
 - Container types (where `T` is another supported type)
   - `[T;N]`
   - `Option<T>`
