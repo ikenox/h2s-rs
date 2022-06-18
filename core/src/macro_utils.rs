@@ -3,13 +3,13 @@
 //! You wouldn't call these methods directly in your code.
 
 use crate::ExtractAttribute;
-use crate::{FromHtml, HtmlElementRef, ParseError, Position, Selector, StructureAdjuster};
+use crate::{FromHtml, HtmlNode, ParseError, Position, Selector, StructureAdjuster};
 
 pub fn extract_attribute(attr: &str) -> ExtractAttribute {
     ExtractAttribute(attr.to_string())
 }
 
-pub fn select<N: HtmlElementRef>(source: &N, selector: &'static str) -> Result<Vec<N>, ParseError> {
+pub fn select<N: HtmlNode>(source: &N, selector: &'static str) -> Result<Vec<N>, ParseError> {
     // TODO cache parsed selector
     let selector = N::Selector::parse(selector).map_err(|_| ParseError::Root {
         message: "unexpected error occurs while parsing CSS selector".to_string(),
@@ -20,7 +20,7 @@ pub fn select<N: HtmlElementRef>(source: &N, selector: &'static str) -> Result<V
 
 pub fn adjust_and_parse<
     'a,
-    N: HtmlElementRef,
+    N: HtmlNode,
     A: 'a,
     H: FromHtml<'a, A>,
     S: StructureAdjuster<H::Source<N>>,

@@ -1,6 +1,6 @@
 #[cfg(feature = "backend-scraper")]
 mod scraper {
-    use crate::{HtmlElementRef, Selector};
+    use crate::{HtmlNode, Selector};
     use itertools::Itertools;
 
     impl Selector for scraper::Selector {
@@ -10,7 +10,7 @@ mod scraper {
         }
     }
 
-    impl<'a> HtmlElementRef for scraper::ElementRef<'a> {
+    impl<'a> HtmlNode for scraper::ElementRef<'a> {
         type Selector = scraper::Selector;
 
         fn select(&self, sel: &Self::Selector) -> Vec<Self> {
@@ -28,7 +28,7 @@ mod scraper {
 
     #[cfg(test)]
     mod test {
-        use crate::{HtmlElementRef, Selector};
+        use crate::{HtmlNode, Selector};
 
         #[test]
         fn selector() {
@@ -66,7 +66,7 @@ mod scraper {
         "#,
             );
             let elem = doc.root_element();
-            let a_span = HtmlElementRef::select(&elem, &Selector::parse("div.a > span").unwrap());
+            let a_span = HtmlNode::select(&elem, &Selector::parse("div.a > span").unwrap());
             assert_eq!(
                 a_span.iter().map(|e| e.html()).collect::<Vec<_>>(),
                 (1..=3)
@@ -75,8 +75,8 @@ mod scraper {
             );
 
             // nested select
-            let b = HtmlElementRef::select(&elem, &Selector::parse(".b").unwrap())[0];
-            let b_span = HtmlElementRef::select(&b, &Selector::parse("span").unwrap());
+            let b = HtmlNode::select(&elem, &Selector::parse(".b").unwrap())[0];
+            let b_span = HtmlNode::select(&b, &Selector::parse("span").unwrap());
             assert_eq!(b_span.len(), 1);
             assert_eq!(b_span[0].html(), "<span>4</span>".to_string());
         }

@@ -46,8 +46,8 @@ impl ToTokens for FromHtmlStructReceiver {
                     .map(|(i, r)| r.build_field_and_value(i));
                 quote! {
                     impl <'a> ::h2s::FromHtml<'a, ()> for #ident {
-                        type Source<N: ::h2s::HtmlElementRef> = N;
-                        fn from_html<N: ::h2s::HtmlElementRef>(
+                        type Source<N: ::h2s::HtmlNode> = N;
+                        fn from_html<N: ::h2s::HtmlNode>(
                             source: &Self::Source<N>,
                             args: (),
                         ) -> Result<Self, ::h2s::ParseError> {

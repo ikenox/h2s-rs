@@ -7,9 +7,9 @@ pub mod util;
 use std::fmt::{Debug, Display};
 
 pub trait FromHtml<'a, A: 'a>: Sized {
-    type Source<N: HtmlElementRef>;
+    type Source<N: HtmlNode>;
 
-    fn from_html<N: HtmlElementRef>(source: &Self::Source<N>, args: A) -> Result<Self, ParseError>;
+    fn from_html<N: HtmlNode>(source: &Self::Source<N>, args: A) -> Result<Self, ParseError>;
 }
 
 pub trait FromText: Sized {
@@ -18,7 +18,7 @@ pub trait FromText: Sized {
 }
 
 // TODO not force to clone
-pub trait HtmlElementRef: Sized + Clone {
+pub trait HtmlNode: Sized + Clone {
     type Selector: Selector;
     fn select(&self, sel: &Self::Selector) -> Vec<Self>;
     fn text_contents(&self) -> String;
@@ -34,7 +34,7 @@ pub trait StructureAdjuster<N> {
 }
 
 pub trait TextExtractor {
-    fn extract<N: HtmlElementRef>(&self, source: &N) -> Result<String, TextExtractionFailed>;
+    fn extract<N: HtmlNode>(&self, source: &N) -> Result<String, TextExtractionFailed>;
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
