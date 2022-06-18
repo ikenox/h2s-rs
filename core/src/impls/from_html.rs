@@ -2,12 +2,9 @@ use crate::FromText;
 use crate::*;
 
 impl<'a, A: TextExtractor + 'a, S: FromText> FromHtml<'a, &'a A> for S {
-    type Source<N: HtmlElementRef> = N;
+    type Source<N: HtmlNode> = N;
 
-    fn from_html<N: HtmlElementRef>(
-        source: &Self::Source<N>,
-        args: &'a A,
-    ) -> Result<Self, ParseError> {
+    fn from_html<N: HtmlNode>(source: &Self::Source<N>, args: &'a A) -> Result<Self, ParseError> {
         let txt = args.extract(source).map_err(|e| ParseError::Root {
             message: format!("failed to extract text: {}", e),
             cause: None,
@@ -19,10 +16,10 @@ impl<'a, A: TextExtractor + 'a, S: FromText> FromHtml<'a, &'a A> for S {
     }
 }
 
-impl<'a, B: Copy + 'a, T: FromHtml<'a, B>, const A: usize> FromHtml<'a, B> for [T; A] {
-    type Source<N: HtmlElementRef> = [T::Source<N>; A];
+impl<'a, A: Copy + 'a, T: FromHtml<'a, A>, const M: usize> FromHtml<'a, A> for [T; M] {
+    type Source<N: HtmlNode> = [T::Source<N>; M];
 
-    fn from_html<N: HtmlElementRef>(source: &Self::Source<N>, args: B) -> Result<Self, ParseError> {
+    fn from_html<N: HtmlNode>(source: &Self::Source<N>, args: A) -> Result<Self, ParseError> {
         let v = source
             .iter()
             .enumerate()
@@ -50,9 +47,9 @@ impl<'a, B: Copy + 'a, T: FromHtml<'a, B>, const A: usize> FromHtml<'a, B> for [
 }
 
 impl<'a, A: Copy + 'a, T: FromHtml<'a, A>> FromHtml<'a, A> for Vec<T> {
-    type Source<N: HtmlElementRef> = Vec<T::Source<N>>;
+    type Source<N: HtmlNode> = Vec<T::Source<N>>;
 
-    fn from_html<N: HtmlElementRef>(source: &Self::Source<N>, args: A) -> Result<Self, ParseError> {
+    fn from_html<N: HtmlNode>(source: &Self::Source<N>, args: A) -> Result<Self, ParseError> {
         source
             .iter()
             .enumerate()
@@ -75,9 +72,9 @@ impl<'a, A: Copy + 'a, T: FromHtml<'a, A>> FromHtml<'a, A> for Vec<T> {
 }
 
 impl<'a, A: 'a, T: FromHtml<'a, A>> FromHtml<'a, A> for Option<T> {
-    type Source<N: HtmlElementRef> = Option<T::Source<N>>;
+    type Source<N: HtmlNode> = Option<T::Source<N>>;
 
-    fn from_html<N: HtmlElementRef>(source: &Self::Source<N>, args: A) -> Result<Self, ParseError> {
+    fn from_html<N: HtmlNode>(source: &Self::Source<N>, args: A) -> Result<Self, ParseError> {
         source
             .as_ref()
             .map(|n| T::from_html(n, args))
@@ -149,10 +146,7 @@ mod test {
     fn from_text() {
         struct MockExtractor {}
         impl TextExtractor for MockExtractor {
-            fn extract<N: HtmlElementRef>(
-                &self,
-                _source: &N,
-            ) -> Result<String, TextExtractionFailed> {
+            fn extract<N: HtmlNode>(&self, _source: &N) -> Result<String, TextExtractionFailed> {
                 ok("ok!")
             }
         }
@@ -174,12 +168,9 @@ mod test {
     }
 
     impl<'a> FromHtml<'a, ()> for FromHtmlImpl {
-        type Source<N: HtmlElementRef> = MockElement;
+        type Source<N: HtmlNode> = MockElement;
 
-        fn from_html<N: HtmlElementRef>(
-            source: &MockElement,
-            _args: (),
-        ) -> Result<Self, ParseError> {
+        fn from_html<N: HtmlNode>(source: &MockElement, _args: ()) -> Result<Self, ParseError> {
             source.clone().0.map(FromHtmlImpl)
         }
     }
@@ -194,7 +185,7 @@ mod test {
         }
     }
 
-    impl HtmlElementRef for MockElement {
+    impl HtmlNode for MockElement {
         type Selector = MockSelector;
 
         fn select(&self, sel: &Self::Selector) -> Vec<Self> {

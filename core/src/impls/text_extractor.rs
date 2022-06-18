@@ -1,8 +1,8 @@
 use crate::{ExtractAttribute, ExtractInnerText};
-use crate::{HtmlElementRef, TextExtractionFailed, TextExtractor};
+use crate::{HtmlNode, TextExtractionFailed, TextExtractor};
 
 impl TextExtractor for ExtractAttribute {
-    fn extract<N: HtmlElementRef>(&self, source: &N) -> Result<String, TextExtractionFailed> {
+    fn extract<N: HtmlNode>(&self, source: &N) -> Result<String, TextExtractionFailed> {
         source
             .get_attribute(&self.0)
             .map(|a| a.to_string())
@@ -11,16 +11,14 @@ impl TextExtractor for ExtractAttribute {
 }
 
 impl TextExtractor for ExtractInnerText {
-    fn extract<N: HtmlElementRef>(&self, source: &N) -> Result<String, TextExtractionFailed> {
+    fn extract<N: HtmlNode>(&self, source: &N) -> Result<String, TextExtractionFailed> {
         Ok(source.text_contents())
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::{
-        ExtractAttribute, ExtractInnerText, FromHtml, HtmlElementRef, ParseError, Selector,
-    };
+    use crate::{ExtractAttribute, ExtractInnerText, FromHtml, HtmlNode, ParseError, Selector};
     use maplit::hashmap;
     use std::collections::HashMap;
 
@@ -78,16 +76,16 @@ mod test {
         pub attributes: HashMap<String, String>,
     }
 
-    pub struct SelectorMock;
+    pub struct MockSelector;
 
-    impl Selector for SelectorMock {
+    impl Selector for MockSelector {
         fn parse<S: AsRef<str>>(_s: S) -> Result<Self, String> {
             unimplemented!()
         }
     }
 
-    impl HtmlElementRef for MockElement {
-        type Selector = SelectorMock;
+    impl HtmlNode for MockElement {
+        type Selector = MockSelector;
 
         fn select(&self, _sel: &Self::Selector) -> Vec<Self> {
             unimplemented!()
