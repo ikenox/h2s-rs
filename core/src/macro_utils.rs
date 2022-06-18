@@ -22,21 +22,21 @@ pub fn adjust_and_parse<
     'a,
     N: HtmlNode,
     A: 'a,
-    H: FromHtml<'a, A>,
-    S: StructureAdjuster<H::Source<N>>,
+    T: FromHtml<'a, A>,
+    S: StructureAdjuster<T::Source<N>>,
 >(
     source: S,
     args: A,
     selector: Option<&'static str>,
     field_name: &'static str,
-) -> Result<H, ParseError> {
+) -> Result<T, ParseError> {
     source
         .try_adjust()
         .map_err(|e| ParseError::Root {
             message: "failed to adjust structure".to_string(),
             cause: Some(format!("{}", e)),
         })
-        .and_then(|s| H::from_html(&s, args))
+        .and_then(|s| T::from_html(&s, args))
         .map_err(|e| ParseError::Child {
             position: Position::Struct {
                 selector: selector.map(|a| a.to_string()),
