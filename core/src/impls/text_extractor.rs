@@ -76,16 +76,16 @@ mod test {
         pub attributes: HashMap<String, String>,
     }
 
-    pub struct SelectorMock;
+    pub struct MockSelector;
 
-    impl Selector for SelectorMock {
+    impl Selector for MockSelector {
         fn parse<S: AsRef<str>>(_s: S) -> Result<Self, String> {
             unimplemented!()
         }
     }
 
     impl HtmlNode for MockElement {
-        type Selector = SelectorMock;
+        type Selector = MockSelector;
 
         fn select(&self, _sel: &Self::Selector) -> Vec<Self> {
             unimplemented!()
