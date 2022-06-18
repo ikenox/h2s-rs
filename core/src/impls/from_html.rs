@@ -19,10 +19,10 @@ impl<'a, A: TextExtractor + 'a, S: FromText> FromHtml<'a, &'a A> for S {
     }
 }
 
-impl<'a, B: Copy + 'a, T: FromHtml<'a, B>, const A: usize> FromHtml<'a, B> for [T; A] {
-    type Source<N: HtmlElementRef> = [T::Source<N>; A];
+impl<'a, A: Copy + 'a, T: FromHtml<'a, A>, const M: usize> FromHtml<'a, A> for [T; M] {
+    type Source<N: HtmlElementRef> = [T::Source<N>; M];
 
-    fn from_html<N: HtmlElementRef>(source: &Self::Source<N>, args: B) -> Result<Self, ParseError> {
+    fn from_html<N: HtmlElementRef>(source: &Self::Source<N>, args: A) -> Result<Self, ParseError> {
         let v = source
             .iter()
             .enumerate()
