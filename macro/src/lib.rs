@@ -107,7 +107,7 @@ impl H2sFieldReceiver {
                 quote!(& ::h2s::macro_utils::extract_attribute(#attr))
             }
             // default
-            None => quote!(::h2s::DefaultArg.into()),
+            None => quote!(::h2s::macro_utils::default_arg()),
         };
 
         let selector = self
