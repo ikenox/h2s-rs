@@ -12,6 +12,7 @@ pub trait FromHtml<'a, A: 'a>: Sized {
     fn from_html<N: HtmlNode>(source: &Self::Source<N>, args: A) -> Result<Self, ParseError>;
 }
 
+// TODO cannot implement into third party structs by users
 pub trait FromText: Sized {
     type Err: Display + Debug + Sized + 'static;
     fn from_text(s: &str) -> Result<Self, Self::Err>;
