@@ -1,7 +1,7 @@
 #![feature(generic_associated_types)]
 
+pub mod _macro_utils;
 mod impls;
-pub mod macro_utils;
 pub mod util;
 
 use std::fmt::{Debug, Display};

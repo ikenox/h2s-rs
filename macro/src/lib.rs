@@ -96,7 +96,7 @@ impl H2sFieldReceiver {
                     )
                     .to_compile_error();
                 }
-                quote!(::h2s::macro_utils::select::<N>(source,#selector)?)
+                quote!(::h2s::_macro_utils::select::<N>(source,#selector)?)
             }
             None => quote!(source.clone()),
         };
@@ -104,10 +104,10 @@ impl H2sFieldReceiver {
         let args = match &self.attr {
             // use specific one if specified
             Some(attr) => {
-                quote!(& ::h2s::macro_utils::extract_attribute(#attr))
+                quote!(& ::h2s::_macro_utils::extract_attribute(#attr))
             }
             // default
-            None => quote!(::h2s::macro_utils::default_arg()),
+            None => quote!(::h2s::_macro_utils::default_arg()),
         };
 
         let selector = self
@@ -116,6 +116,6 @@ impl H2sFieldReceiver {
             .map(|a| quote!(::std::option::Option::Some(#a)))
             .unwrap_or_else(|| quote!(::std::option::Option::None));
 
-        quote!(::h2s::macro_utils::adjust_and_parse::<N,_,_,_>(#source, #args, #selector, #field_name)?)
+        quote!(::h2s::_macro_utils::adjust_and_parse::<N,_,_,_>(#source, #args, #selector, #field_name)?)
     }
 }
