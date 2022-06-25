@@ -180,7 +180,7 @@ mod test {
     pub struct MockSelector;
 
     impl Selector for MockSelector {
-        fn parse<S: AsRef<str>>(s: S) -> Result<Self, String> {
+        fn parse<S: AsRef<str>>(_s: S) -> Result<Self, String> {
             todo!()
         }
     }
@@ -188,7 +188,7 @@ mod test {
     impl HtmlNode for MockElement {
         type Selector = MockSelector;
 
-        fn select(&self, sel: &Self::Selector) -> Vec<Self> {
+        fn select(&self, _sel: &Self::Selector) -> Vec<Self> {
             todo!()
         }
 
@@ -196,7 +196,7 @@ mod test {
             todo!()
         }
 
-        fn get_attribute<S: AsRef<str>>(&self, attr: S) -> Option<&str> {
+        fn get_attribute<S: AsRef<str>>(&self, _attr: S) -> Option<&str> {
             todo!()
         }
     }
