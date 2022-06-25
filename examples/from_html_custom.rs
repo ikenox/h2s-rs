@@ -3,9 +3,6 @@
 use h2s_core::{FromHtml, HtmlNode, ParseError, Selector};
 
 fn main() {
-    // You can add external type to be used
-    // TODO
-
     // You can also implement a parser yourself
     struct MyStruct {
         foo: String,
