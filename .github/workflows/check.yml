@@ -45,6 +45,7 @@ jobs:
       - name: cargo version
         run: cargo --version
       - run: cargo test --all
+      - run: cargo test --examples
   clippy:
     name: clippy
     runs-on: ubuntu-latest

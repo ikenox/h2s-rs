@@ -1,10 +1,10 @@
 use crate::FromText;
 use crate::*;
 
-impl<'a, A: TextExtractor + 'a, S: FromText> FromHtml<'a, &'a A> for S {
+impl<A: TextExtractor, S: FromText> FromHtml<A> for S {
     type Source<N: HtmlNode> = N;
 
-    fn from_html<N: HtmlNode>(source: &Self::Source<N>, args: &'a A) -> Result<Self, ParseError> {
+    fn from_html<N: HtmlNode>(source: &Self::Source<N>, args: &A) -> Result<Self, ParseError> {
         let txt = args.extract(source).map_err(|e| ParseError::Root {
             message: format!("failed to extract text: {}", e),
             cause: None,
@@ -16,10 +16,10 @@ impl<'a, A: TextExtractor + 'a, S: FromText> FromHtml<'a, &'a A> for S {
     }
 }
 
-impl<'a, A: Copy + 'a, T: FromHtml<'a, A>, const M: usize> FromHtml<'a, A> for [T; M] {
+impl<A, T: FromHtml<A>, const M: usize> FromHtml<A> for [T; M] {
     type Source<N: HtmlNode> = [T::Source<N>; M];
 
-    fn from_html<N: HtmlNode>(source: &Self::Source<N>, args: A) -> Result<Self, ParseError> {
+    fn from_html<N: HtmlNode>(source: &Self::Source<N>, args: &A) -> Result<Self, ParseError> {
         let v = source
             .iter()
             .enumerate()
@@ -46,10 +46,10 @@ impl<'a, A: Copy + 'a, T: FromHtml<'a, A>, const M: usize> FromHtml<'a, A> for [
     }
 }
 
-impl<'a, A: Copy + 'a, T: FromHtml<'a, A>> FromHtml<'a, A> for Vec<T> {
+impl<A, T: FromHtml<A>> FromHtml<A> for Vec<T> {
     type Source<N: HtmlNode> = Vec<T::Source<N>>;
 
-    fn from_html<N: HtmlNode>(source: &Self::Source<N>, args: A) -> Result<Self, ParseError> {
+    fn from_html<N: HtmlNode>(source: &Self::Source<N>, args: &A) -> Result<Self, ParseError> {
         source
             .iter()
             .enumerate()
@@ -71,10 +71,10 @@ impl<'a, A: Copy + 'a, T: FromHtml<'a, A>> FromHtml<'a, A> for Vec<T> {
     }
 }
 
-impl<'a, A: 'a, T: FromHtml<'a, A>> FromHtml<'a, A> for Option<T> {
+impl<A, T: FromHtml<A>> FromHtml<A> for Option<T> {
     type Source<N: HtmlNode> = Option<T::Source<N>>;
 
-    fn from_html<N: HtmlNode>(source: &Self::Source<N>, args: A) -> Result<Self, ParseError> {
+    fn from_html<N: HtmlNode>(source: &Self::Source<N>, args: &A) -> Result<Self, ParseError> {
         source
             .as_ref()
             .map(|n| T::from_html(n, args))
@@ -102,7 +102,7 @@ mod test {
         assert_eq!(
             Vec::<FromHtmlImpl>::from_html::<MockElement>(
                 &vec![MockElement(ok("a")), MockElement(ok("b"))],
-                ()
+                &()
             ),
             Ok(vec![FromHtmlImpl::new("a"), FromHtmlImpl::new("b")]),
             "the method is applied for each items of the vec"
@@ -111,7 +111,7 @@ mod test {
         assert_eq!(
             Vec::<FromHtmlImpl>::from_html::<MockElement>(
                 &vec![MockElement(Ok("a".into())), MockElement(err("err!"))],
-                (),
+                &()
             ),
             Err(ParseError::Child {
                 position: Position::Index(1),
@@ -124,19 +124,19 @@ mod test {
     #[test]
     fn option() {
         assert_eq!(
-            Option::<FromHtmlImpl>::from_html::<MockElement>(&Some(MockElement(ok("ok!"))), ()),
+            Option::<FromHtmlImpl>::from_html::<MockElement>(&Some(MockElement(ok("ok!"))), &()),
             Ok(Some(FromHtmlImpl::new("ok!"))),
             "the method is applied for is present"
         );
 
         assert_eq!(
-            Option::<FromHtmlImpl>::from_html::<MockElement>(&None, ()),
+            Option::<FromHtmlImpl>::from_html::<MockElement>(&None, &()),
             Ok(None),
             "returned none if none"
         );
 
         assert_eq!(
-            Option::<FromHtmlImpl>::from_html::<MockElement>(&Some(MockElement(err("err!"))), ()),
+            Option::<FromHtmlImpl>::from_html::<MockElement>(&Some(MockElement(err("err!"))), &()),
             err("err!"),
             "returned error if failed to apply"
         );
@@ -167,10 +167,10 @@ mod test {
         }
     }
 
-    impl<'a> FromHtml<'a, ()> for FromHtmlImpl {
+    impl FromHtml<()> for FromHtmlImpl {
         type Source<N: HtmlNode> = MockElement;
 
-        fn from_html<N: HtmlNode>(source: &MockElement, _args: ()) -> Result<Self, ParseError> {
+        fn from_html<N: HtmlNode>(source: &MockElement, _args: &()) -> Result<Self, ParseError> {
             source.clone().0.map(FromHtmlImpl)
         }
     }

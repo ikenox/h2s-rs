@@ -1,6 +1,18 @@
-use crate::{ExtractAttribute, ExtractInnerText};
+use crate::ExtractAttribute;
 use crate::{HtmlNode, TextExtractionFailed, TextExtractor};
 
+/**
+A default text extractor that extracts inner text content
+*/
+impl TextExtractor for () {
+    fn extract<N: HtmlNode>(&self, source: &N) -> Result<String, TextExtractionFailed> {
+        Ok(source.text_contents())
+    }
+}
+
+/**
+An extractor that extracts the specified attribute value
+ */
 impl TextExtractor for ExtractAttribute {
     fn extract<N: HtmlNode>(&self, source: &N) -> Result<String, TextExtractionFailed> {
         source
@@ -10,15 +22,9 @@ impl TextExtractor for ExtractAttribute {
     }
 }
 
-impl TextExtractor for ExtractInnerText {
-    fn extract<N: HtmlNode>(&self, source: &N) -> Result<String, TextExtractionFailed> {
-        Ok(source.text_contents())
-    }
-}
-
 #[cfg(test)]
 mod test {
-    use crate::{ExtractAttribute, ExtractInnerText, FromHtml, HtmlNode, ParseError, Selector};
+    use crate::{ExtractAttribute, FromHtml, HtmlNode, ParseError, Selector};
     use maplit::hashmap;
     use std::collections::HashMap;
 
@@ -64,7 +70,7 @@ mod test {
                     text_contents: "foo".to_string(),
                     ..Default::default()
                 },
-                &ExtractInnerText,
+                &(),
             ),
             Ok("foo".to_string()),
         );

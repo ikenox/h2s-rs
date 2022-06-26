@@ -112,4 +112,5 @@ By default, you can use the following types as a field value of `FromHtml`-deriv
 
 ### Use custom types
 
-You can also extend any types to be usable by implementing `FromHtml` or `FromText` trait yourself.
+You can also extend any types to be usable by implementing `FromHtml` or `FromText` trait yourself.  
+Please see [examples](./examples).

@@ -6,10 +6,10 @@ pub mod util;
 
 use std::fmt::{Debug, Display};
 
-pub trait FromHtml<'a, A: 'a>: Sized {
+pub trait FromHtml<A>: Sized {
     type Source<N: HtmlNode>;
 
-    fn from_html<N: HtmlNode>(source: &Self::Source<N>, args: A) -> Result<Self, ParseError>;
+    fn from_html<N: HtmlNode>(source: &Self::Source<N>, args: &A) -> Result<Self, ParseError>;
 }
 
 // TODO cannot implement into third party structs by users
@@ -68,9 +68,3 @@ pub struct TextExtractionFailed(String);
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ExtractAttribute(pub String);
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct ExtractInnerText;
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct DefaultArg;

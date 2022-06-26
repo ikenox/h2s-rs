@@ -2,7 +2,7 @@
 //! These methods are shorthands to reduce codes in the `quote!` macro. It improves development experience with IDE.
 //! You wouldn't call these methods directly in your code.
 
-use crate::{DefaultArg, ExtractAttribute};
+use crate::ExtractAttribute;
 use crate::{FromHtml, HtmlNode, ParseError, Position, Selector, StructureAdjuster};
 
 pub fn extract_attribute(attr: &str) -> ExtractAttribute {
@@ -18,19 +18,9 @@ pub fn select<N: HtmlNode>(source: &N, selector: &'static str) -> Result<Vec<N>,
     Ok(source.select(&selector))
 }
 
-pub fn default_arg<T: From<DefaultArg>>() -> T {
-    DefaultArg.into()
-}
-
-pub fn adjust_and_parse<
-    'a,
-    N: HtmlNode,
-    A: 'a,
-    T: FromHtml<'a, A>,
-    S: StructureAdjuster<T::Source<N>>,
->(
+pub fn adjust_and_parse<N: HtmlNode, A, T: FromHtml<A>, S: StructureAdjuster<T::Source<N>>>(
     source: S,
-    args: A,
+    args: &A,
     selector: Option<&'static str>,
     field_name: &'static str,
 ) -> Result<T, ParseError> {

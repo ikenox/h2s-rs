@@ -45,11 +45,11 @@ impl ToTokens for FromHtmlStructReceiver {
                     .enumerate()
                     .map(|(i, r)| r.build_field_and_value(i));
                 quote! {
-                    impl <'a> ::h2s::FromHtml<'a, ()> for #ident {
+                    impl ::h2s::FromHtml<()> for #ident {
                         type Source<N: ::h2s::HtmlNode> = N;
                         fn from_html<N: ::h2s::HtmlNode>(
                             source: &Self::Source<N>,
-                            args: (),
+                            args: &(),
                         ) -> Result<Self, ::h2s::ParseError> {
                             Ok(Self{
                                 #(#field_and_values),*
@@ -104,10 +104,10 @@ impl H2sFieldReceiver {
         let args = match &self.attr {
             // use specific one if specified
             Some(attr) => {
-                quote!(& ::h2s::_macro_utils::extract_attribute(#attr))
+                quote!(&::h2s::_macro_utils::extract_attribute(#attr))
             }
             // default
-            None => quote!(::h2s::_macro_utils::default_arg()),
+            None => quote!(&()),
         };
 
         let selector = self

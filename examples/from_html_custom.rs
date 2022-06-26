@@ -9,10 +9,13 @@ fn main() {
         bar: String,
     }
 
-    impl<'a> FromHtml<'a, ()> for MyStruct {
+    impl FromHtml<()> for MyStruct {
         type Source<N: HtmlNode> = N;
 
-        fn from_html<N: HtmlNode>(source: &Self::Source<N>, _args: ()) -> Result<Self, ParseError> {
+        fn from_html<N: HtmlNode>(
+            source: &Self::Source<N>,
+            _args: &(),
+        ) -> Result<Self, ParseError> {
             Ok(MyStruct {
                 foo: source.text_contents(),
                 bar: source
