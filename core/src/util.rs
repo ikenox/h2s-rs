@@ -19,5 +19,5 @@ where
     for<'b> T: FromHtml<A, Source<ElementRef<'b>> = ElementRef<'b>>,
 {
     let doc = ::scraper::Html::parse_document(html);
-    T::from_html::<ElementRef<'_>>(&doc.root_element(), &args)
+    T::from_html::<ElementRef<'_>>(&doc.root_element(), args)
 }
