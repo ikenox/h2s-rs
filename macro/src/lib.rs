@@ -44,13 +44,16 @@ impl ToTokens for FromHtmlStructReceiver {
                     .into_iter()
                     .enumerate()
                     .map(|(i, r)| r.build_field_and_value(i));
+                // TODO Can I avoid to use trait object?
                 quote! {
                     impl ::h2s::FromHtml<()> for #ident {
                         type Source<N: ::h2s::HtmlNode> = N;
+                        type Error = Box<dyn ::h2s::FromHtmlError>;
+
                         fn from_html<N: ::h2s::HtmlNode>(
                             source: &Self::Source<N>,
                             args: &(),
-                        ) -> Result<Self, ::h2s::ParseError> {
+                        ) -> Result<Self, Self::Error> {
                             Ok(Self{
                                 #(#field_and_values),*
                             })
@@ -96,7 +99,7 @@ impl H2sFieldReceiver {
                     )
                     .to_compile_error();
                 }
-                quote!(::h2s::_macro_utils::select::<N>(source,#selector)?)
+                quote!(::h2s::macro_utils::select::<N>(source,#selector))
             }
             None => quote!(source.clone()),
         };
@@ -104,7 +107,7 @@ impl H2sFieldReceiver {
         let args = match &self.attr {
             // use specific one if specified
             Some(attr) => {
-                quote!(&::h2s::_macro_utils::extract_attribute(#attr))
+                quote!(&::h2s::macro_utils::extract_attribute(#attr))
             }
             // default
             None => quote!(&()),
@@ -116,6 +119,6 @@ impl H2sFieldReceiver {
             .map(|a| quote!(::std::option::Option::Some(#a)))
             .unwrap_or_else(|| quote!(::std::option::Option::None));
 
-        quote!(::h2s::_macro_utils::adjust_and_parse::<N,_,_,_>(#source, #args, #selector, #field_name)?)
+        quote!(::h2s::macro_utils::adjust_and_parse::<N,_,_,_>(#source, #args, #selector, #field_name)?)
     }
 }

@@ -1,11 +1,11 @@
 //! A set of public utility methods that are convenient for users of this library.
 //! This module doesn't represent any business logic. It's just a human-friendly user interface.
 
-use crate::{FromHtml, ParseError};
+use crate::FromHtml;
 use scraper::ElementRef;
 
 #[cfg(feature = "backend-scraper")]
-pub fn parse<T>(html: &str) -> Result<T, ParseError>
+pub fn parse<T>(html: &str) -> Result<T, T::Error>
 where
     for<'b> T: FromHtml<(), Source<ElementRef<'b>> = ElementRef<'b>>,
 {
@@ -14,7 +14,7 @@ where
 }
 
 #[cfg(feature = "backend-scraper")]
-pub fn parse_with_args<T, A>(html: &str, args: &A) -> Result<T, ParseError>
+pub fn parse_with_args<T, A>(html: &str, args: &A) -> Result<T, T::Error>
 where
     for<'b> T: FromHtml<A, Source<ElementRef<'b>> = ElementRef<'b>>,
 {

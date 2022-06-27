@@ -1,30 +1,38 @@
-use crate::ExtractAttribute;
-use crate::{HtmlNode, TextExtractionFailed, TextExtractor};
+use crate::impls::from_html::TextExtractionError;
+use crate::impls::from_html::TextExtractor;
+use crate::never::Never;
+use crate::HtmlNode;
+use std::fmt::{Display, Formatter};
 
-/**
-A default text extractor that extracts inner text content
-*/
+/// A default text extractor that extracts inner text content
 impl TextExtractor for () {
-    fn extract<N: HtmlNode>(&self, source: &N) -> Result<String, TextExtractionFailed> {
+    type Error = Never;
+
+    fn extract<N: HtmlNode>(&self, source: &N) -> Result<String, Self::Error> {
         Ok(source.text_contents())
     }
 }
 
-/**
-An extractor that extracts the specified attribute value
- */
+/// An extractor that extracts the specified attribute value
 impl TextExtractor for ExtractAttribute {
-    fn extract<N: HtmlNode>(&self, source: &N) -> Result<String, TextExtractionFailed> {
+    type Error = AttributeNotFound;
+
+    fn extract<N: HtmlNode>(&self, source: &N) -> Result<String, Self::Error> {
         source
-            .get_attribute(&self.0)
+            .get_attribute(&self.name)
             .map(|a| a.to_string())
-            .ok_or_else(|| TextExtractionFailed(format!("attribute `{}` not found", self.0)))
+            .ok_or_else(|| AttributeNotFound {
+                name: self.name.clone(),
+            })
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::{ExtractAttribute, FromHtml, HtmlNode, ParseError, Selector};
+    use crate::impls::from_html::FromHtmlTextError;
+    use crate::impls::text_extractor::{AttributeNotFound, ExtractAttribute};
+    use crate::never::Never;
+    use crate::{FromHtml, HtmlNode, Selector};
     use maplit::hashmap;
     use std::collections::HashMap;
 
@@ -38,7 +46,9 @@ mod test {
                     },
                     ..Default::default()
                 },
-                &ExtractAttribute("foo".to_string())
+                &ExtractAttribute {
+                    name: "foo".to_string()
+                }
             ),
             Ok("bar".to_string()),
             "correct attribute value will be extracted"
@@ -52,12 +62,13 @@ mod test {
                     },
                     ..Default::default()
                 },
-                &ExtractAttribute("aaa".to_string())
+                &ExtractAttribute {
+                    name: "aaa".to_string()
+                }
             ),
-            Err(ParseError::Root {
-                message: "failed to extract text: attribute `aaa` not found".to_string(),
-                cause: None
-            }),
+            Err(FromHtmlTextError::ExtractionFailed(AttributeNotFound {
+                name: "aaa".to_string()
+            })),
             "error when element doesn't have the specified attribute"
         );
     }
@@ -85,7 +96,9 @@ mod test {
     pub struct MockSelector;
 
     impl Selector for MockSelector {
-        fn parse<S: AsRef<str>>(_s: S) -> Result<Self, String> {
+        type Error = Never;
+
+        fn parse<S: AsRef<str>>(_s: S) -> Result<Self, Self::Error> {
             unimplemented!()
         }
     }
@@ -105,4 +118,26 @@ mod test {
             self.attributes.get(attr.as_ref()).map(|a| a.as_str())
         }
     }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct AttributeNotFound {
+    pub name: String,
+}
+
+impl Display for AttributeNotFound {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "an attribute `{}` not found in the target element",
+            self.name
+        )
+    }
+}
+
+impl TextExtractionError for AttributeNotFound {}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct ExtractAttribute {
+    pub name: String,
 }

@@ -1,12 +1,25 @@
 #[cfg(feature = "backend-scraper")]
 mod scraper {
-    use crate::{HtmlNode, Selector};
+    use crate::{HtmlNode, ParseSelectorError, Selector};
     use itertools::Itertools;
+    use std::fmt::{Display, Formatter};
 
     impl Selector for scraper::Selector {
-        fn parse<S: AsRef<str>>(s: S) -> Result<Self, String> {
-            scraper::Selector::parse(s.as_ref())
-                .map_err(|_| format!("failed to parse css selector `{}`", s.as_ref()))
+        type Error = ParseFailed;
+
+        fn parse<S: AsRef<str>>(s: S) -> Result<Self, ParseFailed> {
+            scraper::Selector::parse(s.as_ref()).map_err(|_| ParseFailed)
+        }
+    }
+
+    #[derive(Debug, Clone, Eq, PartialEq)]
+    pub struct ParseFailed;
+
+    impl ParseSelectorError for ParseFailed {}
+
+    impl Display for ParseFailed {
+        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+            write!(f, "failed to parse css selector")
         }
     }
 
@@ -28,6 +41,7 @@ mod scraper {
 
     #[cfg(test)]
     mod test {
+        use crate::impls::html_backend::scraper::ParseFailed;
         use crate::{HtmlNode, Selector};
 
         #[test]
@@ -39,7 +53,7 @@ mod scraper {
 
             assert_eq!(
                 <scraper::Selector as super::Selector>::parse(":invalid:"),
-                Err("failed to parse css selector `:invalid:`".to_string()),
+                Err(ParseFailed),
             );
         }
 

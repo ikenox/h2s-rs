@@ -1,20 +1,24 @@
-use crate::FromText;
+use crate::impls::from_html::{FromText, FromTextError};
+use std::char::ParseCharError;
+use std::convert::Infallible;
 use std::ffi::OsString;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
+use std::net::{
+    AddrParseError, IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6,
+};
 use std::num::{
     NonZeroI128, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI8, NonZeroIsize, NonZeroU128,
-    NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU8, NonZeroUsize,
+    NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU8, NonZeroUsize, ParseFloatError, ParseIntError,
 };
 use std::path::PathBuf;
-use std::str::FromStr;
+use std::str::{FromStr, ParseBoolError};
 
 macro_rules! impl_from_text {
     ($($t:ty),*) => {
         $(
             impl FromText for $t {
-                type Err = <$t as FromStr>::Err;
+                type Error = <$t as FromStr>::Err;
 
-                fn from_text(s: &str) -> Result<Self, Self::Err> {
+                fn from_text(s: &str) -> Result<Self, Self::Error> {
                     s.parse()
                 }
             }
@@ -64,3 +68,10 @@ impl_from_text!(
     SocketAddrV6,
     OsString
 );
+
+impl FromTextError for Infallible {}
+impl FromTextError for AddrParseError {}
+impl FromTextError for ParseFloatError {}
+impl FromTextError for ParseBoolError {}
+impl FromTextError for ParseCharError {}
+impl FromTextError for ParseIntError {}
