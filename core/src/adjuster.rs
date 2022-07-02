@@ -23,7 +23,7 @@ impl<N> StructureAdjuster<N> for Vec<N> {
         if self.len() > 1 {
             Err(Self::Error::TooManyElements { found: self.len() })
         } else {
-            self.pop().ok_or_else(|| Self::Error::NoElements)
+            self.pop().ok_or(Self::Error::NoElements)
         }
     }
 }

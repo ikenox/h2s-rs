@@ -114,7 +114,7 @@ mod display {
                 self.selector
                     .as_ref()
                     .map(|s| format!(" {s}"))
-                    .unwrap_or("".into()),
+                    .unwrap_or_else(|| "".into()),
             )?;
             match &self.error {
                 StructErrorCause::StructureUnmatched(e) => write!(f, "structure unmatched: {e}"),
