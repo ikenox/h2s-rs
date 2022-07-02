@@ -1,7 +1,7 @@
 use crate::adjuster::AdjustStructureError;
 use crate::from_text::{FromText, FromTextError};
 use crate::text_extractor::{TextExtractionError, TextExtractor};
-use crate::*;
+use crate::{FromHtml, FromHtmlError, HtmlNode};
 use std::fmt::Formatter;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -104,6 +104,7 @@ impl<A, T: FromHtml<A>> FromHtml<A> for Option<T> {
 
 mod display {
     use super::*;
+    use std::fmt::Display;
 
     impl<A: AdjustStructureError, B: FromHtmlError> Display for StructFieldError<A, B> {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -156,6 +157,7 @@ mod error {
 mod test {
     use super::*;
     use crate::never::Never;
+    use crate::Selector;
 
     impl FromHtmlError for String {}
 
