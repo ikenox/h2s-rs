@@ -65,8 +65,8 @@ fn string_values() {
 
     let res = h2s::util::parse::<Struct1>(html);
     assert_eq!(
-        res,
-        Ok(Struct1 {
+        res.unwrap(),
+        Struct1 {
             a: s("avalue"),
             b: s("bvalue"),
             c: s("cvalue"),
@@ -75,7 +75,7 @@ fn string_values() {
             e_none: None,
             f: [s("fvalue1"), s("fvalue2"), s("fvalue3")],
             g: Struct2 { h: s("hvalue") }
-        })
+        }
     )
 }
 
@@ -139,15 +139,15 @@ fn nested_struct() {
     let si2 = |s: &str| StructInner2 { v: s.to_string() };
 
     assert_eq!(
-        res,
-        Ok(Struct {
+        res.unwrap(),
+        Struct {
             a: StructInner1 { a: s("a") },
             b: si2("bvalue"),
             c: vec![si2("cvalue1"), si2("cvalue2"), si2("cvalue3")],
             d: Some(si2("dvalue")),
             d_none: None,
             e: [si2("evalue1"), si2("evalue2"), si2("evalue3")],
-        })
+        }
     )
 }
 
@@ -199,15 +199,15 @@ fn struct_unnamed() {
     let si2 = |s: &str| StructInner2(s.to_string());
 
     assert_eq!(
-        res,
-        Ok(Struct(
+        res.unwrap(),
+        Struct(
             StructInner1(s("a")),
             si2("bvalue"),
             vec![si2("cvalue1"), si2("cvalue2"), si2("cvalue3")],
             Some(si2("dvalue")),
             None,
             [si2("evalue1"), si2("evalue2"), si2("evalue3")],
-        ))
+        )
     )
 }
 

@@ -1,16 +1,16 @@
 #![feature(generic_associated_types)]
 
 use h2s::FromHtml;
-use h2s_core::FromText;
+use h2s_core::from_text::FromText;
 
 fn main() {
     // You can define an external parseable type yourself
     // TODO currently you have to define newtype to implement
     struct Duration(std::time::Duration);
     impl FromText for Duration {
-        type Err = std::num::ParseIntError;
+        type Error = std::num::ParseIntError;
 
-        fn from_text(s: &str) -> Result<Self, Self::Err> {
+        fn from_text(s: &str) -> Result<Self, Self::Error> {
             let sec = s.parse()?;
             Ok(Duration(std::time::Duration::from_secs(sec)))
         }

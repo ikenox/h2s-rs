@@ -1,22 +1,24 @@
 #![feature(generic_associated_types)]
 
-pub mod _macro_utils;
-mod impls;
+pub mod adjuster;
+pub mod backend;
+pub mod from_html;
+pub mod from_text;
+pub mod macro_utils;
+pub mod never;
+pub mod text_extractor;
 pub mod util;
 
 use std::fmt::{Debug, Display};
 
 pub trait FromHtml<A>: Sized {
     type Source<N: HtmlNode>;
+    type Error: FromHtmlError;
 
-    fn from_html<N: HtmlNode>(source: &Self::Source<N>, args: &A) -> Result<Self, ParseError>;
+    fn from_html<N: HtmlNode>(source: &Self::Source<N>, args: &A) -> Result<Self, Self::Error>;
 }
 
-// TODO cannot implement into third party structs by users
-pub trait FromText: Sized {
-    type Err: Display + Debug + Sized + 'static;
-    fn from_text(s: &str) -> Result<Self, Self::Err>;
-}
+pub trait FromHtmlError: Display + Debug + 'static {}
 
 // TODO not force to clone
 pub trait HtmlNode: Sized + Clone {
@@ -27,44 +29,8 @@ pub trait HtmlNode: Sized + Clone {
 }
 
 pub trait Selector: Sized {
-    fn parse<S: AsRef<str>>(s: S) -> Result<Self, String>;
+    type Error: ParseSelectorError;
+    fn parse<S: AsRef<str>>(s: S) -> Result<Self, Self::Error>;
 }
 
-pub trait StructureAdjuster<N> {
-    fn try_adjust(self) -> Result<N, StructureUnmatched>;
-}
-
-pub trait TextExtractor {
-    fn extract<N: HtmlNode>(&self, source: &N) -> Result<String, TextExtractionFailed>;
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum ParseError {
-    Root {
-        message: String,
-        // TODO hold Box<dyn SomeErrorTrait>
-        cause: Option<String>,
-    },
-    Child {
-        position: Position,
-        error: Box<ParseError>,
-    },
-}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub enum Position {
-    Index(usize),
-    Struct {
-        selector: Option<String>,
-        field_name: String,
-    },
-}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct StructureUnmatched(String);
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct TextExtractionFailed(String);
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct ExtractAttribute(pub String);
+pub trait ParseSelectorError: Display + Debug + 'static {}
