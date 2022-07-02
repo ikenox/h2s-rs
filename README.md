@@ -102,7 +102,7 @@ By default, you can use the following types as a field value of `FromHtml`-deriv
 - Basic types
   - `String`
   - Numeric types ( `usize`, `i64`, `NonZeroU32`, ... )
-  - [And more](./core/src/impls/from_text.rs)
+  - [And more](./core/src/from_text.rs)
 - Container types (where `T` is another supported type)
   - `[T;N]`
   - `Option<T>`
