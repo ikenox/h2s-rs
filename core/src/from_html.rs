@@ -1,6 +1,6 @@
-use crate::impls::adjuster::AdjustStructureError;
-use crate::impls::from_text::{FromText, FromTextError};
-use crate::impls::text_extractor::{TextExtractionError, TextExtractor};
+use crate::adjuster::AdjustStructureError;
+use crate::from_text::{FromText, FromTextError};
+use crate::text_extractor::{TextExtractionError, TextExtractor};
 use crate::*;
 use std::fmt::Formatter;
 

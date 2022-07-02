@@ -2,9 +2,9 @@
 //! These methods are shorthands to reduce codes in the `quote!` macro. It improves development experience with IDE.
 //! You wouldn't call these methods directly in your code.
 
-use crate::impls::adjuster::StructureAdjuster;
-use crate::impls::from_html::{StructErrorCause, StructFieldError};
-use crate::impls::text_extractor::impls::ExtractAttribute;
+use crate::adjuster::StructureAdjuster;
+use crate::from_html::{StructErrorCause, StructFieldError};
+use crate::text_extractor::impls::ExtractAttribute;
 use crate::FromHtmlError;
 use crate::{FromHtml, HtmlNode, Selector};
 

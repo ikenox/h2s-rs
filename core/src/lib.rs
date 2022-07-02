@@ -1,9 +1,12 @@
 #![feature(generic_associated_types)]
 
+pub mod adjuster;
 pub mod backend;
-pub mod impls;
+pub mod from_html;
+pub mod from_text;
 pub mod macro_utils;
 pub mod never;
+pub mod text_extractor;
 pub mod util;
 
 use std::fmt::{Debug, Display};

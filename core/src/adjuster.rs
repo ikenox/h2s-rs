@@ -1,6 +1,5 @@
 use crate::never::Never;
 use crate::*;
-use std::fmt::Formatter;
 
 pub trait StructureAdjuster<N> {
     type Error: AdjustStructureError;
@@ -123,8 +122,8 @@ mod error {
 
 #[cfg(test)]
 mod test {
-    use crate::impls::adjuster::StructureAdjuster;
-    use crate::impls::adjuster::{VecToArrayError, VecToOptionError, VecToSingleError};
+    use crate::adjuster::StructureAdjuster;
+    use crate::adjuster::{VecToArrayError, VecToOptionError, VecToSingleError};
 
     #[test]
     fn single() {

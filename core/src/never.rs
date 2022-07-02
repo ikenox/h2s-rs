@@ -1,5 +1,5 @@
-use crate::impls::adjuster::AdjustStructureError;
-use crate::impls::text_extractor::TextExtractionError;
+use crate::adjuster::AdjustStructureError;
+use crate::text_extractor::TextExtractionError;
 use crate::ParseSelectorError;
 use std::fmt::{Display, Formatter};
 

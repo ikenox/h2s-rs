@@ -60,9 +60,9 @@ pub mod impls {
 
 #[cfg(test)]
 mod test {
-    use crate::impls::from_html::FromHtmlTextError;
-    use crate::impls::text_extractor::impls::{AttributeNotFound, ExtractAttribute};
+    use crate::from_html::FromHtmlTextError;
     use crate::never::Never;
+    use crate::text_extractor::impls::{AttributeNotFound, ExtractAttribute};
     use crate::{FromHtml, HtmlNode, Selector};
     use maplit::hashmap;
     use std::collections::HashMap;
