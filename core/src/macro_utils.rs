@@ -4,7 +4,7 @@
 
 use crate::impls::adjuster::StructureAdjuster;
 use crate::impls::from_html::{StructErrorCause, StructFieldError};
-use crate::impls::text_extractor::ExtractAttribute;
+use crate::impls::text_extractor::impls::ExtractAttribute;
 use crate::FromHtmlError;
 use crate::{FromHtml, HtmlNode, Selector};
 

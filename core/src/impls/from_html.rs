@@ -1,4 +1,6 @@
 use crate::impls::adjuster::AdjustStructureError;
+use crate::impls::from_text::{FromText, FromTextError};
+use crate::impls::text_extractor::{TextExtractionError, TextExtractor};
 use crate::*;
 use std::fmt::Formatter;
 
@@ -7,26 +9,6 @@ pub struct StructFieldError<A: AdjustStructureError, B: FromHtmlError> {
     pub selector: Option<String>,
     pub field_name: String,
     pub error: StructErrorCause<A, B>,
-}
-
-impl<A: AdjustStructureError, B: FromHtmlError> FromHtmlError for StructFieldError<A, B> {}
-
-impl<A: AdjustStructureError, B: FromHtmlError> Display for StructFieldError<A, B> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "({}){}: ",
-            self.field_name,
-            self.selector
-                .as_ref()
-                .map(|s| format!(" {s}"))
-                .unwrap_or("".into()),
-        )?;
-        match &self.error {
-            StructErrorCause::StructureUnmatched(e) => write!(f, "structure unmatched: {e}"),
-            StructErrorCause::ParseError(e) => write!(f, "failed to parse: {e}"),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -52,37 +34,6 @@ pub enum FromHtmlTextError<A: TextExtractionError, B: FromTextError> {
     ExtractionFailed(A),
     TextParseError(B),
 }
-
-impl<A: TextExtractionError, B: FromTextError> Display for FromHtmlTextError<A, B> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "failed to convert text into the value: ")?;
-        match &self {
-            FromHtmlTextError::ExtractionFailed(e) => {
-                write!(f, "{e}")
-            }
-            FromHtmlTextError::TextParseError(e) => {
-                write!(f, "{e}")
-            }
-        }
-    }
-}
-
-impl<A: TextExtractionError, B: FromTextError> FromHtmlError for FromHtmlTextError<A, B> {}
-
-pub trait TextExtractor {
-    type Error: TextExtractionError;
-    fn extract<N: HtmlNode>(&self, source: &N) -> Result<String, Self::Error>;
-}
-
-pub trait TextExtractionError: Display + Debug + 'static {}
-
-// TODO cannot implement into third party structs by users
-pub trait FromText: Sized {
-    type Error: FromTextError;
-    fn from_text(s: &str) -> Result<Self, Self::Error>;
-}
-
-pub trait FromTextError: Display + Debug + 'static {}
 
 impl<A, T: FromHtml<A>, const M: usize> FromHtml<A> for [T; M] {
     type Source<N: HtmlNode> = [T::Source<N>; M];
@@ -139,14 +90,6 @@ pub struct ListElementError<E: FromHtmlError> {
     pub error: E,
 }
 
-impl<E: FromHtmlError> Display for ListElementError<E> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[{}]: {}", self.index, self.error)
-    }
-}
-
-impl<E: FromHtmlError> FromHtmlError for ListElementError<E> {}
-
 impl<A, T: FromHtml<A>> FromHtml<A> for Option<T> {
     type Source<N: HtmlNode> = Option<T::Source<N>>;
     type Error = T::Error;
@@ -157,6 +100,56 @@ impl<A, T: FromHtml<A>> FromHtml<A> for Option<T> {
             .map(|n| T::from_html(n, args))
             .map_or(Ok(None), |v| v.map(Some))
     }
+}
+
+mod display {
+    use super::*;
+
+    impl<A: AdjustStructureError, B: FromHtmlError> Display for StructFieldError<A, B> {
+        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+            write!(
+                f,
+                "({}){}: ",
+                self.field_name,
+                self.selector
+                    .as_ref()
+                    .map(|s| format!(" {s}"))
+                    .unwrap_or("".into()),
+            )?;
+            match &self.error {
+                StructErrorCause::StructureUnmatched(e) => write!(f, "structure unmatched: {e}"),
+                StructErrorCause::ParseError(e) => write!(f, "failed to parse: {e}"),
+            }
+        }
+    }
+
+    impl<A: TextExtractionError, B: FromTextError> Display for FromHtmlTextError<A, B> {
+        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+            write!(f, "failed to convert text into the value: ")?;
+            match &self {
+                FromHtmlTextError::ExtractionFailed(e) => {
+                    write!(f, "{e}")
+                }
+                FromHtmlTextError::TextParseError(e) => {
+                    write!(f, "{e}")
+                }
+            }
+        }
+    }
+
+    impl<E: FromHtmlError> Display for ListElementError<E> {
+        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+            write!(f, "[{}]: {}", self.index, self.error)
+        }
+    }
+}
+
+mod error {
+    use super::*;
+
+    impl<A: AdjustStructureError, B: FromHtmlError> FromHtmlError for StructFieldError<A, B> {}
+    impl<A: TextExtractionError, B: FromTextError> FromHtmlError for FromHtmlTextError<A, B> {}
+    impl<E: FromHtmlError> FromHtmlError for ListElementError<E> {}
 }
 
 #[cfg(test)]

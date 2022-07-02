@@ -2,6 +2,13 @@ use crate::never::Never;
 use crate::*;
 use std::fmt::Formatter;
 
+pub trait StructureAdjuster<N> {
+    type Error: AdjustStructureError;
+    fn try_adjust(self) -> Result<N, Self::Error>;
+}
+
+pub trait AdjustStructureError: Display + Debug + 'static {}
+
 impl<N> StructureAdjuster<N> for N {
     type Error = Never;
 
@@ -28,24 +35,6 @@ pub enum VecToSingleError {
     NoElements,
 }
 
-impl AdjustStructureError for VecToSingleError {}
-
-impl Display for VecToSingleError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match &self {
-            VecToSingleError::TooManyElements { found } => {
-                write!(
-                    f,
-                    "expected exactly one element, but {found} elements found"
-                )
-            }
-            VecToSingleError::NoElements => {
-                write!(f, "expected exactly one element, but no elements found")
-            }
-        }
-    }
-}
-
 impl<N, const A: usize> StructureAdjuster<[N; A]> for Vec<N> {
     type Error = VecToArrayError;
 
@@ -61,21 +50,6 @@ impl<N, const A: usize> StructureAdjuster<[N; A]> for Vec<N> {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum VecToArrayError {
     ElementNumberUnmatched { expected: usize, found: usize },
-}
-
-impl AdjustStructureError for VecToArrayError {}
-
-impl Display for VecToArrayError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match &self {
-            VecToArrayError::ElementNumberUnmatched { expected, found } => {
-                write!(
-                    f,
-                    "expected {expected} elements, but found {found} elements"
-                )
-            }
-        }
-    }
 }
 
 impl<N> StructureAdjuster<Option<N>> for Vec<N> {
@@ -95,16 +69,56 @@ pub enum VecToOptionError {
     TooManyElements { found: usize },
 }
 
-impl AdjustStructureError for VecToOptionError {}
+mod display {
+    use super::*;
+    use std::fmt::{Display, Formatter};
 
-impl Display for VecToOptionError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match &self {
-            VecToOptionError::TooManyElements { found } => {
-                write!(f, "expected 0 or 1 element, but found {found} elements")
+    impl Display for VecToSingleError {
+        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+            match &self {
+                VecToSingleError::TooManyElements { found } => {
+                    write!(
+                        f,
+                        "expected exactly one element, but {found} elements found"
+                    )
+                }
+                VecToSingleError::NoElements => {
+                    write!(f, "expected exactly one element, but no elements found")
+                }
             }
         }
     }
+
+    impl Display for VecToOptionError {
+        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+            match &self {
+                VecToOptionError::TooManyElements { found } => {
+                    write!(f, "expected 0 or 1 element, but found {found} elements")
+                }
+            }
+        }
+    }
+
+    impl Display for VecToArrayError {
+        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+            match &self {
+                VecToArrayError::ElementNumberUnmatched { expected, found } => {
+                    write!(
+                        f,
+                        "expected {expected} elements, but found {found} elements"
+                    )
+                }
+            }
+        }
+    }
+}
+
+mod error {
+    use super::*;
+
+    impl AdjustStructureError for VecToSingleError {}
+    impl AdjustStructureError for VecToOptionError {}
+    impl AdjustStructureError for VecToArrayError {}
 }
 
 #[cfg(test)]
@@ -155,10 +169,3 @@ mod test {
         );
     }
 }
-
-pub trait StructureAdjuster<N> {
-    type Error: AdjustStructureError;
-    fn try_adjust(self) -> Result<N, Self::Error>;
-}
-
-pub trait AdjustStructureError: Display + Debug + 'static {}
