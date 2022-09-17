@@ -3,7 +3,7 @@ use h2s_core::from_text::FromText;
 
 fn main() {
     // You can define an external parseable type yourself
-    // TODO currently you have to define newtype to implement
+    // Currently you have to define a newtype for an external crate struct
     struct Duration(std::time::Duration);
     impl FromText for Duration {
         type Error = std::num::ParseIntError;

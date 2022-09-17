@@ -5,6 +5,7 @@ authors = ["Naoto Ikeno <ikenox@gmail.com>"]
 edition = "2021"
 repository = "https://github.com/ikenox/h2s"
 license = "MIT"
+rust-version = "1.65"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

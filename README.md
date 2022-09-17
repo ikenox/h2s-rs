@@ -105,10 +105,11 @@ By default, you can use the following types as a field value of `FromHtml`-deriv
   - `[T;N]`
   - `Option<T>`
   - `Vec<T>`
-- Another struct that is derived/implemented `FromHtml` trait
-- Another struct that is implemented `FromText` trait
+- Any struct that is derived/implemented `FromHtml` trait
+- Any struct that is implemented `FromText` trait
 
 ### Use custom types
 
-You can also extend any types to be usable by implementing `FromHtml` or `FromText` trait yourself.  
-Please see [examples](./examples).
+You can also use custom types by implementing `FromHtml` or `FromText` trait yourself.  
+In many cases for a simple value, [implementing `FromText`](./examples/from_text_custom.rs) can be enough.
+Please see also [examples](./examples). 
