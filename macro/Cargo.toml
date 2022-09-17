@@ -1,10 +1,12 @@
 [package]
 name = "h2s_macro"
+description = "A declarative HTML parser library."
 version = "0.1.0"
 authors = ["Naoto Ikeno <ikenox@gmail.com>"]
-edition = "2021"
-repository = "https://github.com/ikenox/h2s"
+repository = "https://github.com/ikenox/h2s-rs"
 license = "MIT"
+readme = "README.md"
+edition = "2021"
 rust-version = "1.65"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

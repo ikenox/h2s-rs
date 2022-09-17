@@ -1,18 +1,16 @@
 [package]
 name = "h2s"
+description = "A declarative HTML parser library."
 version = "0.1.0"
 authors = ["Naoto Ikeno <ikenox@gmail.com>"]
-edition = "2021"
 repository = "https://github.com/ikenox/h2s-rs"
-description = """
-A declarative HTML parser library.
-"""
 license = "MIT"
 readme = "README.md"
+edition = "2021"
 rust-version = "1.65"
 
 categories = ["parsing"]
-keywords = ["html", "parser", "declarative"]
+keywords = ["html", "dom", "parser"]
 
 [workspace]
 members = ["macro", "core"]
