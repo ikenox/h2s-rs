@@ -11,6 +11,9 @@ license = "MIT"
 readme = "README.md"
 rust-version = "1.65"
 
+categories = ["parsing"]
+keywords = ["html", "parser", "declarative"]
+
 [workspace]
 members = ["macro", "core"]
 
