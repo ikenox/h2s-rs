@@ -1,5 +1,3 @@
-#![feature(generic_associated_types)]
-
 use h2s::FromHtml;
 use h2s_core::from_text::FromText;
 

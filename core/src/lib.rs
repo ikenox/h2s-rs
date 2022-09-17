@@ -1,5 +1,3 @@
-#![feature(generic_associated_types)]
-
 pub mod adjuster;
 pub mod backend;
 pub mod from_html;

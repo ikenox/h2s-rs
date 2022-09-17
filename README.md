@@ -9,8 +9,6 @@ A declarative HTML parser library in Rust, that works like a deserializer from H
 ## Example
 
 ```rust
-#![feature(generic_associated_types)]
-
 use h2s::FromHtml;
 
 #[derive(FromHtml, Debug, Eq, PartialEq)]

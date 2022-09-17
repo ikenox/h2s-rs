@@ -1,5 +1,3 @@
-#![feature(generic_associated_types)]
-
 use h2s_core::{FromHtml, FromHtmlError, HtmlNode, Selector};
 use std::fmt::{Display, Formatter};
 

@@ -9,6 +9,7 @@ A declarative HTML parser library.
 """
 license = "MIT"
 readme = "README.md"
+rust-version = "1.65"
 
 [workspace]
 members = ["macro", "core"]
