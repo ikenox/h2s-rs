@@ -8,6 +8,18 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
+  readme:
+    name: check README.md is up-to-date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: install cargo-readme
+        uses: baptiste0928/cargo-install@v1
+        with:
+          crate: cargo-readme
+      - uses: Swatinem/rust-cache@v1
+      - name: diff README.md
+        run: cargo readme | diff README.md -
   rustfmt:
     name: check the code is correctly formatted
     runs-on: ubuntu-latest

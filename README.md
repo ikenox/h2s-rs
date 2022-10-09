@@ -1,6 +1,6 @@
-# h2s
-
 [![Check](https://github.com/ikenox/h2s/actions/workflows/check.yml/badge.svg?branch=main)](https://github.com/ikenox/h2s/actions/workflows/check.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) ![Rustc Version 1.65+](https://img.shields.io/badge/rustc-1.65+-bc71d0.svg)
+
+# h2s
 
 A declarative HTML parser library in Rust, that works like a deserializer from HTML to struct.
 
@@ -60,7 +60,7 @@ fn main() {
 </body>
 </html>
     "#;
-    
+
     let page: Page = h2s::util::parse(html).unwrap();
     assert_eq!(page, Page {
         blog_title: "My tech blog".into(),
@@ -108,6 +108,10 @@ By default, you can use the following types as a field value of `FromHtml`-deriv
 
 ### Use custom types
 
-You can also use custom types by implementing `FromHtml` or `FromText` trait yourself.  
+You can also use custom types by implementing `FromHtml` or `FromText` trait yourself.
 In many cases for a simple value, [implementing `FromText`](./examples/from_text_custom.rs) can be enough.
-Please see also [examples](./examples). 
+Please see also [examples](./examples).
+
+## License
+
+MIT
