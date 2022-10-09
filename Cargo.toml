@@ -21,7 +21,3 @@ h2s_macro = { version = "=0.1.0", path = "macro" }
 
 [dev-dependencies]
 scraper = "0.13.0"
-skeptic = "0.13"
-
-[build-dependencies]
-skeptic = "0.13"

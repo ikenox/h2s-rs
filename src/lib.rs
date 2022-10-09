@@ -27,8 +27,7 @@
 //!     tags: Vec<String>,
 //! }
 //!
-//! fn main() {
-//!     let html = r#"
+//! let html = r#"
 //! <html>
 //! <body>
 //! <div>
@@ -55,36 +54,35 @@
 //! </div>
 //! </body>
 //! </html>
-//!     "#;
+//! "#;
 //!
-//!     let page: Page = h2s::util::parse(html).unwrap();
-//!     assert_eq!(page, Page {
-//!         blog_title: "My tech blog".into(),
-//!         articles: vec![
-//!             Article {
-//!                 title: "article1".into(),
-//!                 url: "https://example.com/1".into(),
-//!                 view_count: 901,
-//!                 modified_date: Some("2020-05-01".into()),
-//!                 tags: vec!["Tag1".into(), "Tag2".into()]
-//!             },
-//!             Article {
-//!                 title: "article2".into(),
-//!                 url: "https://example.com/2".into(),
-//!                 view_count: 849,
-//!                 modified_date: Some("2020-03-30".into()),
-//!                 tags: vec![]
-//!             },
-//!             Article {
-//!                 title: "article3".into(),
-//!                 url: "https://example.com/3".into(),
-//!                 view_count: 103,
-//!                 modified_date: None,
-//!                 tags: vec!["Tag3".into()]
-//!             },
-//!         ]
-//!     });
-//! }
+//! let page: Page = h2s::util::parse(html).unwrap();
+//! assert_eq!(page, Page {
+//!     blog_title: "My tech blog".into(),
+//!     articles: vec![
+//!         Article {
+//!             title: "article1".into(),
+//!             url: "https://example.com/1".into(),
+//!             view_count: 901,
+//!             modified_date: Some("2020-05-01".into()),
+//!             tags: vec!["Tag1".into(), "Tag2".into()]
+//!         },
+//!         Article {
+//!             title: "article2".into(),
+//!             url: "https://example.com/2".into(),
+//!             view_count: 849,
+//!             modified_date: Some("2020-03-30".into()),
+//!             tags: vec![]
+//!         },
+//!         Article {
+//!             title: "article3".into(),
+//!             url: "https://example.com/3".into(),
+//!             view_count: 103,
+//!             modified_date: None,
+//!             tags: vec!["Tag3".into()]
+//!         },
+//!     ]
+//! });
 //! ```
 //!
 //! # Built-in supported types
