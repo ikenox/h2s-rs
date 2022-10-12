@@ -1,8 +1,7 @@
-use crate::{HtmlNode, ParseSelectorError, Selector};
+use crate::{CssSelector, HtmlNode};
 use itertools::Itertools;
-use std::fmt::{Display, Formatter};
 
-impl Selector for scraper::Selector {
+impl CssSelector for scraper::Selector {
     type Error = ParseFailed;
 
     fn parse<S: AsRef<str>>(s: S) -> Result<Self, ParseFailed> {
@@ -12,14 +11,6 @@ impl Selector for scraper::Selector {
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ParseFailed;
-
-impl ParseSelectorError for ParseFailed {}
-
-impl Display for ParseFailed {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "failed to parse css selector")
-    }
-}
 
 impl<'a> HtmlNode for scraper::ElementRef<'a> {
     type Selector = scraper::Selector;
@@ -32,7 +23,7 @@ impl<'a> HtmlNode for scraper::ElementRef<'a> {
         self.text().join(" ")
     }
 
-    fn get_attribute<S: AsRef<str>>(&self, attr: S) -> Option<&str> {
+    fn attribute<S: AsRef<str>>(&self, attr: S) -> Option<&str> {
         self.value().attr(attr.as_ref())
     }
 }
@@ -40,17 +31,17 @@ impl<'a> HtmlNode for scraper::ElementRef<'a> {
 #[cfg(test)]
 mod test {
     use crate::backend::scraper::ParseFailed;
-    use crate::{HtmlNode, Selector};
+    use crate::{CssSelector, HtmlNode};
 
     #[test]
     fn selector() {
         assert_eq!(
-            <scraper::Selector as super::Selector>::parse("div > .a").unwrap(),
+            <scraper::Selector as CssSelector>::parse("div > .a").unwrap(),
             scraper::Selector::parse("div > .a").unwrap(),
         );
 
         assert_eq!(
-            <scraper::Selector as super::Selector>::parse(":invalid:"),
+            <scraper::Selector as CssSelector>::parse(":invalid:"),
             Err(ParseFailed),
         );
     }
@@ -78,7 +69,7 @@ mod test {
         "#,
         );
         let elem = doc.root_element();
-        let a_span = HtmlNode::select(&elem, &Selector::parse("div.a > span").unwrap());
+        let a_span = HtmlNode::select(&elem, &CssSelector::parse("div.a > span").unwrap());
         assert_eq!(
             a_span.iter().map(|e| e.html()).collect::<Vec<_>>(),
             (1..=3)
@@ -87,8 +78,8 @@ mod test {
         );
 
         // nested select
-        let b = HtmlNode::select(&elem, &Selector::parse(".b").unwrap())[0];
-        let b_span = HtmlNode::select(&b, &Selector::parse("span").unwrap());
+        let b = HtmlNode::select(&elem, &CssSelector::parse(".b").unwrap())[0];
+        let b_span = HtmlNode::select(&b, &CssSelector::parse("span").unwrap());
         assert_eq!(b_span.len(), 1);
         assert_eq!(b_span[0].html(), "<span>4</span>".to_string());
     }
@@ -106,11 +97,11 @@ mod test {
         let doc = scraper::Html::parse_fragment(r#"<html><div id="foo" class="bar" /></html>"#);
         let elem = doc
             .root_element()
-            .select(&Selector::parse("div").unwrap())
+            .select(&CssSelector::parse("div").unwrap())
             .next()
             .unwrap();
         println!("{}", elem.html());
-        assert_eq!(elem.get_attribute("id").unwrap(), "foo");
-        assert_eq!(elem.get_attribute("class").unwrap(), "bar");
+        assert_eq!(elem.attribute("id").unwrap(), "foo");
+        assert_eq!(elem.attribute("class").unwrap(), "bar");
     }
 }

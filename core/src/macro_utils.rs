@@ -2,17 +2,12 @@
 //! These methods are shorthands to reduce codes in the `quote!` macro. It improves development experience with IDE.
 //! You wouldn't call these methods directly in your code.
 
-use crate::adjuster::StructureAdjuster;
-use crate::from_html::{StructErrorCause, StructFieldError};
-use crate::text_extractor::impls::ExtractAttribute;
-use crate::FromHtmlError;
-use crate::{FromHtml, HtmlNode, Selector};
+use crate::from_html::{ExtractionType, StructErrorCause, StructFieldError};
+use crate::mapper::Mapper;
+use crate::transformer::Transformer;
 
-pub fn extract_attribute(attr: &str) -> ExtractAttribute {
-    ExtractAttribute {
-        name: attr.to_string(),
-    }
-}
+use crate::Error;
+use crate::{CssSelector, FromHtml, HtmlNode};
 
 pub fn select<N: HtmlNode>(source: &N, selector: &'static str) -> Vec<N> {
     // TODO cache parsed selector
@@ -23,22 +18,43 @@ pub fn select<N: HtmlNode>(source: &N, selector: &'static str) -> Vec<N> {
     source.select(&selector)
 }
 
-impl FromHtmlError for Box<dyn FromHtmlError> {}
-
-pub fn adjust_and_parse<N: HtmlNode, A, T: FromHtml<A>, S: StructureAdjuster<T::Source<N>>>(
+pub fn try_transform_and_map<
+    N: HtmlNode,
+    T: FromHtml,
+    M: Mapper<T>,
+    S: Transformer<M::Structure<N>>,
+>(
     source: S,
-    args: &A,
+    args: &T::Args,
     selector: Option<&'static str>,
     field_name: &'static str,
-) -> Result<T, Box<dyn FromHtmlError>> {
+) -> Result<M, Box<dyn Error>> {
     source
-        .try_adjust()
+        .try_transform()
         .map_err(StructErrorCause::StructureUnmatched)
-        .and_then(|s| T::from_html(&s, args).map_err(StructErrorCause::ParseError))
+        .and_then(|s| M::try_map(s, args).map_err(StructErrorCause::ParseError))
         .map_err(|e| StructFieldError {
             field_name: field_name.to_string(),
             selector: selector.map(|a| a.to_string()),
             error: e,
         })
-        .map_err(|e| Box::new(e) as Box<dyn FromHtmlError>)
+        .map_err(|e| Box::new(e) as Box<dyn Error>)
+}
+
+pub fn default_argument<T: DefaultArg>() -> T {
+    DefaultArg::default()
+}
+
+pub trait DefaultArg {
+    fn default() -> Self;
+}
+
+impl DefaultArg for () {
+    fn default() -> Self {}
+}
+
+impl DefaultArg for ExtractionType {
+    fn default() -> Self {
+        ExtractionType::Text
+    }
 }

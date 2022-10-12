@@ -14,11 +14,9 @@ use std::str::{FromStr, ParseBoolError};
 
 // TODO cannot implement into third party structs by users
 pub trait FromText: Sized {
-    type Error: FromTextError;
+    type Error: Display + Debug + 'static;
     fn from_text(s: &str) -> Result<Self, Self::Error>;
 }
-
-pub trait FromTextError: Display + Debug + 'static {}
 
 mod impls {
     use super::*;
@@ -79,11 +77,4 @@ mod impls {
         SocketAddrV6,
         OsString
     );
-
-    impl FromTextError for Infallible {}
-    impl FromTextError for AddrParseError {}
-    impl FromTextError for ParseFloatError {}
-    impl FromTextError for ParseBoolError {}
-    impl FromTextError for ParseCharError {}
-    impl FromTextError for ParseIntError {}
 }

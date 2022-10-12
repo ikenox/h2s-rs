@@ -1,34 +1,43 @@
-pub mod adjuster;
+//! A core part of h2s
+
 pub mod backend;
+pub mod display;
 pub mod from_html;
 pub mod from_text;
 pub mod macro_utils;
-pub mod never;
+pub mod mapper;
 pub mod text_extractor;
+pub mod transformer;
 pub mod util;
 
 use std::fmt::{Debug, Display};
 
-pub trait FromHtml<A>: Sized {
-    type Source<N: HtmlNode>;
-    type Error: FromHtmlError;
+/// A converter from single HTML node to single struct
+pub trait FromHtml: Sized {
+    type Args;
+    type Error: Error;
 
-    fn from_html<N: HtmlNode>(source: &Self::Source<N>, args: &A) -> Result<Self, Self::Error>;
+    fn from_html<N: HtmlNode>(source: &N, args: &Self::Args) -> Result<Self, Self::Error>;
 }
 
-pub trait FromHtmlError: Display + Debug + 'static {}
+pub trait Error: Display + Debug + 'static {}
+impl<T: Display + Debug + 'static> Error for T {}
 
 // TODO not force to clone
+/// HTML Node
 pub trait HtmlNode: Sized + Clone {
-    type Selector: Selector;
+    type Selector: CssSelector;
     fn select(&self, sel: &Self::Selector) -> Vec<Self>;
     fn text_contents(&self) -> String;
-    fn get_attribute<S: AsRef<str>>(&self, attr: S) -> Option<&str>;
+    fn attribute<S: AsRef<str>>(&self, attr: S) -> Option<&str>;
 }
 
-pub trait Selector: Sized {
-    type Error: ParseSelectorError;
+/// CSS Selector
+pub trait CssSelector: Sized {
+    type Error: Error;
     fn parse<S: AsRef<str>>(s: S) -> Result<Self, Self::Error>;
 }
 
-pub trait ParseSelectorError: Display + Debug + 'static {}
+/// Similar with std::convert::Infallible
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum Never {}

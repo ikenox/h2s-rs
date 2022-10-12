@@ -1,3 +1,6 @@
+//! A macro part of [h2s].
+//! [h2s]: https://github.com/ikenox/h2s-rs
+
 use darling::ast::Data;
 use darling::{FromDeriveInput, FromField};
 use proc_macro::TokenStream;
@@ -46,13 +49,13 @@ impl ToTokens for FromHtmlStructReceiver {
                     .map(|(i, r)| r.build_field_and_value(i));
                 // TODO Can I avoid to use trait object?
                 quote! {
-                    impl ::h2s::FromHtml<()> for #ident {
-                        type Source<N: ::h2s::HtmlNode> = N;
-                        type Error = Box<dyn ::h2s::FromHtmlError>;
+                    impl ::h2s::FromHtml for #ident {
+                        type Args = ();
+                        type Error = Box<dyn ::h2s::Error>;
 
                         fn from_html<N: ::h2s::HtmlNode>(
-                            source: &Self::Source<N>,
-                            args: &(),
+                            source: &N,
+                            args: &Self::Args,
                         ) -> Result<Self, Self::Error> {
                             Ok(Self{
                                 #(#field_and_values),*
@@ -101,16 +104,17 @@ impl H2sFieldReceiver {
                 }
                 quote!(::h2s::macro_utils::select::<N>(source,#selector))
             }
-            None => quote!(source.clone()),
+            None => quote!(::std::vec![source.clone()]),
         };
 
+        // FIXME user‐unfriendly error message is shown when argument is mismatched
         let args = match &self.attr {
             // use specific one if specified
             Some(attr) => {
-                quote!(&::h2s::macro_utils::extract_attribute(#attr))
+                quote!(&::h2s::from_html::ExtractionType::Attribute(#attr .to_string()))
             }
             // default
-            None => quote!(&()),
+            None => quote!(&::h2s::macro_utils::default_argument()),
         };
 
         let selector = self
@@ -119,6 +123,6 @@ impl H2sFieldReceiver {
             .map(|a| quote!(::std::option::Option::Some(#a)))
             .unwrap_or_else(|| quote!(::std::option::Option::None));
 
-        quote!(::h2s::macro_utils::adjust_and_parse::<N,_,_,_>(#source, #args, #selector, #field_name)?)
+        quote!(::h2s::macro_utils::try_transform_and_map::<N,_,_,_>(#source, #args, #selector, #field_name)?)
     }
 }
