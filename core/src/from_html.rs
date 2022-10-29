@@ -6,7 +6,6 @@ use crate::Error;
 use crate::{FromHtml, HtmlNode};
 use std::fmt::{Debug, Display};
 
-
 impl<S: FromText> FromHtml for S
 where
     S::Error: Debug + Display + 'static,
