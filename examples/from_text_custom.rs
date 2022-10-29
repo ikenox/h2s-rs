@@ -1,7 +1,6 @@
 use h2s::FromHtml;
 use h2s_core::from_text::FromText;
 use std::num::ParseIntError;
-use std::str::FromStr;
 
 fn main() {
     // You can define an external parseable type yourself
