@@ -1,12 +1,13 @@
 use h2s::FromHtml;
 use h2s_core::from_text::FromText;
+use std::num::ParseIntError;
 
 fn main() {
     // You can define an external parseable type yourself
     // Currently you have to define a newtype for an external crate struct
     struct Duration(std::time::Duration);
     impl FromText for Duration {
-        type Error = std::num::ParseIntError;
+        type Error = ParseIntError;
 
         fn from_text(s: &str) -> Result<Self, Self::Error> {
             let sec = s.parse()?;

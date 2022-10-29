@@ -1,13 +1,11 @@
-use crate::never::Never;
-use crate::HtmlNode;
-use std::fmt::{Debug, Display, Formatter};
+use crate::Never;
+use crate::{Error, HtmlNode};
+use std::fmt::Debug;
 
 pub trait TextExtractor {
-    type Error: TextExtractionError;
+    type Error: Error;
     fn extract<N: HtmlNode>(&self, source: &N) -> Result<String, Self::Error>;
 }
-
-pub trait TextExtractionError: Display + Debug + 'static {}
 
 pub mod impls {
     use super::*;
@@ -32,7 +30,7 @@ pub mod impls {
 
         fn extract<N: HtmlNode>(&self, source: &N) -> Result<String, Self::Error> {
             source
-                .get_attribute(&self.name)
+                .attribute(&self.name)
                 .map(|a| a.to_string())
                 .ok_or_else(|| AttributeNotFound {
                     name: self.name.clone(),
@@ -44,26 +42,14 @@ pub mod impls {
     pub struct AttributeNotFound {
         pub name: String,
     }
-
-    impl TextExtractionError for AttributeNotFound {}
-
-    impl Display for AttributeNotFound {
-        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-            write!(
-                f,
-                "an attribute `{}` not found in the target element",
-                self.name
-            )
-        }
-    }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::from_html::FromHtmlTextError;
-    use crate::never::Never;
-    use crate::text_extractor::impls::{AttributeNotFound, ExtractAttribute};
-    use crate::{FromHtml, HtmlNode, Selector};
+    use crate::from_html::{ExtractionType, FromHtmlTextError};
+    use crate::text_extractor::impls::AttributeNotFound;
+    use crate::Never;
+    use crate::{CssSelector, FromHtml, HtmlNode};
     use maplit::hashmap;
     use std::collections::HashMap;
 
@@ -77,9 +63,7 @@ mod test {
                     },
                     ..Default::default()
                 },
-                &ExtractAttribute {
-                    name: "foo".to_string()
-                }
+                &ExtractionType::Attribute("foo".to_string())
             ),
             Ok("bar".to_string()),
             "correct attribute value will be extracted"
@@ -93,9 +77,7 @@ mod test {
                     },
                     ..Default::default()
                 },
-                &ExtractAttribute {
-                    name: "aaa".to_string()
-                }
+                &ExtractionType::Attribute("aaa".to_string())
             ),
             Err(FromHtmlTextError::ExtractionFailed(AttributeNotFound {
                 name: "aaa".to_string()
@@ -112,7 +94,7 @@ mod test {
                     text_contents: "foo".to_string(),
                     ..Default::default()
                 },
-                &(),
+                &ExtractionType::Text,
             ),
             Ok("foo".to_string()),
         );
@@ -126,7 +108,7 @@ mod test {
 
     pub struct MockSelector;
 
-    impl Selector for MockSelector {
+    impl CssSelector for MockSelector {
         type Error = Never;
 
         fn parse<S: AsRef<str>>(_s: S) -> Result<Self, Self::Error> {
@@ -145,7 +127,7 @@ mod test {
             self.text_contents.clone()
         }
 
-        fn get_attribute<S: AsRef<str>>(&self, attr: S) -> Option<&str> {
+        fn attribute<S: AsRef<str>>(&self, attr: S) -> Option<&str> {
             self.attributes.get(attr.as_ref()).map(|a| a.as_str())
         }
     }

@@ -2,22 +2,16 @@
 //! This module doesn't represent any business logic. It's just a human-friendly user interface.
 
 use crate::FromHtml;
-use scraper::ElementRef;
 
-#[cfg(feature = "backend-scraper")]
 pub fn parse<T>(html: &str) -> Result<T, T::Error>
 where
-    for<'b> T: FromHtml<(), Source<ElementRef<'b>> = ElementRef<'b>>,
+    for<'b> T: FromHtml<Args = ()>,
 {
-    let doc = ::scraper::Html::parse_document(html);
-    T::from_html::<ElementRef<'_>>(&doc.root_element(), &())
+    parse_with_args(html, &())
 }
 
 #[cfg(feature = "backend-scraper")]
-pub fn parse_with_args<T, A>(html: &str, args: &A) -> Result<T, T::Error>
-where
-    for<'b> T: FromHtml<A, Source<ElementRef<'b>> = ElementRef<'b>>,
-{
-    let doc = ::scraper::Html::parse_document(html);
-    T::from_html::<ElementRef<'_>>(&doc.root_element(), args)
+pub fn parse_with_args<T: FromHtml>(html: &str, args: &T::Args) -> Result<T, T::Error> {
+    let doc = scraper::Html::parse_document(html);
+    T::from_html(&doc.root_element(), args)
 }
