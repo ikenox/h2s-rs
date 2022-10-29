@@ -89,7 +89,7 @@ assert_eq!(page, Page {
 });
 ```
 
-## Built-in supported types
+## Supported types
 
 You can use the following types as a field value of the struct to parse.
 
