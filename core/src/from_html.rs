@@ -5,7 +5,7 @@ use crate::text_extractor::impls::AttributeNotFound;
 use crate::Error;
 use crate::{FromHtml, HtmlNode};
 use std::fmt::{Debug, Display};
-use std::str::FromStr;
+
 
 impl<S: FromText> FromHtml for S
 where

@@ -1,16 +1,16 @@
-use std::char::ParseCharError;
-use std::convert::Infallible;
+
+
 use std::ffi::OsString;
 use std::fmt::{Debug, Display};
 use std::net::{
-    AddrParseError, IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6,
+    IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6,
 };
 use std::num::{
     NonZeroI128, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI8, NonZeroIsize, NonZeroU128,
-    NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU8, NonZeroUsize, ParseFloatError, ParseIntError,
+    NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU8, NonZeroUsize,
 };
 use std::path::PathBuf;
-use std::str::{FromStr, ParseBoolError};
+use std::str::{FromStr};
 
 // TODO cannot implement into third party structs by users
 pub trait FromText: Sized {
