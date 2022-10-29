@@ -91,24 +91,20 @@ assert_eq!(page, Page {
 
 ## Built-in supported types
 
-By default, you can use the following types as a field value of `FromHtml`-derived structs.
+You can use the following types as a field value of the struct to parse.
 
-- Basic types
+### Basic types
+
   - `String`
   - Numeric types ( `usize`, `i64`, `NonZeroU32`, ... )
-  - [And more](./core/src/from_text.rs)
-- Container types (where `T` is another supported type)
+  - And more built-in supported types ([List](./core/src/from_text.rs))
+  - Or you can use any types by implementing yourself ([Example](./examples/from_text_custom.rs))
+
+### Container types (where `T` is a basic type)
+
   - `[T;N]`
   - `Option<T>`
   - `Vec<T>`
-- Any struct that is derived/implemented `FromHtml` trait
-- Any struct that is implemented `FromText` trait
-
-### Use custom types
-
-You can also use custom types by implementing `FromHtml` or `FromText` trait yourself.
-In many cases for a simple value, [implementing `FromText`](./examples/from_text_custom.rs) can be enough.
-Please see also [examples](./examples).
 
 ## License
 
