@@ -56,7 +56,7 @@
 //! </html>
 //! "#;
 //!
-//! let page: Page = h2s::util::parse(html).unwrap();
+//! let page: Page = h2s::parse(html).unwrap();
 //! assert_eq!(page, Page {
 //!     blog_title: "My tech blog".into(),
 //!     articles: vec![
@@ -102,5 +102,28 @@
 //!   - `Option<T>`
 //!   - `Vec<T>`
 
+use crate::backend::scraper::Scraper;
+use crate::backend::{Backend, DocumentRoot};
 pub use h2s_core::*;
 pub use h2s_macro::*;
+
+pub mod backend;
+
+/// A shorthand method without specifying backend HTML parser
+#[cfg(any(feature = "backend-scraper"))]
+pub fn parse<T>(html: impl AsRef<str>) -> Result<T, T::Error>
+where
+    for<'b> T: FromHtml<Args = ()>,
+{
+    #[cfg(feature = "backend-scraper")]
+    parse_with_backend::<T, Scraper>(html, &())
+}
+
+/// Parsing with specific backend HTML parser
+pub fn parse_with_backend<T, B>(html: impl AsRef<str>, args: &T::Args) -> Result<T, T::Error>
+where
+    T: FromHtml,
+    B: Backend,
+{
+    T::from_html(&B::parse_document(html).root_element(), args)
+}

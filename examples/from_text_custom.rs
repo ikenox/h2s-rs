@@ -23,7 +23,7 @@ fn main() {
         duration2: Duration,
     }
 
-    let my_struct = h2s::util::parse::<MyStruct>(r#"<div seconds="456">123</div>"#).unwrap();
+    let my_struct = h2s::parse::<MyStruct>(r#"<div seconds="456">123</div>"#).unwrap();
     assert_eq!(my_struct.duration1.0, std::time::Duration::from_secs(123));
     assert_eq!(my_struct.duration2.0, std::time::Duration::from_secs(456));
 }

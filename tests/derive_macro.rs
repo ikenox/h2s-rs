@@ -61,7 +61,7 @@ fn string_values() {
 </html>
     "#;
 
-    let res = h2s::util::parse::<Struct1>(html);
+    let res = h2s::parse::<Struct1>(html);
     assert_eq!(
         res.unwrap(),
         Struct1 {
@@ -132,7 +132,7 @@ fn nested_struct() {
 </html>
     "#;
 
-    let res = h2s::util::parse::<Struct>(html);
+    let res = h2s::parse::<Struct>(html);
 
     let si2 = |s: &str| StructInner2 { v: s.to_string() };
 
@@ -192,7 +192,7 @@ fn struct_unnamed() {
 </html>
     "#;
 
-    let res = h2s::util::parse::<Struct>(html);
+    let res = h2s::parse::<Struct>(html);
 
     let si2 = |s: &str| StructInner2(s.to_string());
 

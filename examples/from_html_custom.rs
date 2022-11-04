@@ -34,7 +34,7 @@ fn main() {
         }
     }
 
-    let my_struct = h2s::util::parse::<MyStruct>(r#"<div bar="world">hello<div>"#).unwrap();
+    let my_struct = h2s::parse::<MyStruct>(r#"<div bar="world">hello<div>"#).unwrap();
     assert_eq!(&my_struct.foo, "hello");
     assert_eq!(&my_struct.bar, "world");
 }

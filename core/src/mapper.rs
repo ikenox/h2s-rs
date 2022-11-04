@@ -190,15 +190,15 @@ mod test {
         type Error = Never;
 
         fn parse<S: AsRef<str>>(_s: S) -> Result<Self, Self::Error> {
-            todo!()
+            unimplemented!()
         }
     }
 
     impl HtmlNode for MockElement {
         type Selector = MockSelector;
 
-        fn select(&self, _sel: &Self::Selector) -> Vec<Self> {
-            todo!()
+        fn select(&self, _selector: &Self::Selector) -> Vec<Self> {
+            unimplemented!()
         }
 
         fn text_contents(&self) -> String {
@@ -206,7 +206,7 @@ mod test {
         }
 
         fn attribute<S: AsRef<str>>(&self, _attr: S) -> Option<&str> {
-            todo!()
+            unimplemented!()
         }
     }
 }
