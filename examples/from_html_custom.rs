@@ -10,6 +10,7 @@ fn main() {
 
     #[derive(Debug)]
     struct MyStructError(String);
+    impl std::error::Error for MyStructError {}
 
     impl Display for MyStructError {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

@@ -1,6 +1,7 @@
 //! A core part of h2s
 
 pub mod display;
+mod error;
 pub mod from_html;
 pub mod from_text;
 pub mod macro_utils;
@@ -8,7 +9,7 @@ pub mod mapper;
 pub mod text_extractor;
 pub mod transformer;
 
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 
 /// A converter from single HTML node to single struct
 pub trait FromHtml: Sized {
@@ -45,6 +46,6 @@ pub trait CssSelector: Sized {
 pub enum Never {}
 
 /// Common error trait
-pub trait Error: Display + Debug + Sync + Send + 'static {}
+pub trait Error: std::error::Error + Sync + Send + 'static {}
 
-impl<T> Error for T where T: Display + Debug + Sync + Send + 'static {}
+impl<T> Error for T where T: std::error::Error + Sync + Send + 'static {}

@@ -116,6 +116,17 @@ mod test {
     use super::*;
     use crate::CssSelector;
     use crate::Never;
+    use std::fmt::{Display, Formatter};
+
+    #[derive(Debug, Clone, Eq, PartialEq)]
+    pub struct ErrorImpl(String);
+
+    impl Display for ErrorImpl {
+        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{}", &self.0)
+        }
+    }
+    impl std::error::Error for ErrorImpl {}
 
     #[test]
     fn vec() {
@@ -129,7 +140,7 @@ mod test {
             Vec::<FromHtmlImpl>::try_map(vec![MockElement("a"), MockElement("!b")], &()),
             Err(ListElementError {
                 index: 1,
-                error: "!b".to_string()
+                error: ErrorImpl("!b".to_string())
             }),
             "returned error if one of the vec items fails to apply"
         );
@@ -151,7 +162,7 @@ mod test {
 
         assert_eq!(
             Option::<FromHtmlImpl>::try_map::<MockElement>(Some(MockElement("!err")), &()),
-            Err("!err".to_string()),
+            Err(ErrorImpl("!err".to_string())),
             "returned error if failed to apply"
         );
     }
@@ -167,7 +178,7 @@ mod test {
 
     impl FromHtml for FromHtmlImpl {
         type Args = ();
-        type Error = String;
+        type Error = ErrorImpl;
 
         fn from_html<N>(source: &N, _args: &Self::Args) -> Result<Self, Self::Error>
         where
@@ -175,7 +186,7 @@ mod test {
         {
             let text = source.text_contents();
             if text.starts_with('!') {
-                Err(text)
+                Err(ErrorImpl(text))
             } else {
                 Ok(FromHtmlImpl(text))
             }
