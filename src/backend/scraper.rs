@@ -10,7 +10,10 @@ pub struct Scraper;
 impl Backend for Scraper {
     type Root = ScraperDocumentRoot;
 
-    fn parse_document<S: AsRef<str>>(s: S) -> Self::Root {
+    fn parse_document<S>(s: S) -> Self::Root
+    where
+        S: AsRef<str>,
+    {
         ScraperDocumentRoot(Html::parse_document(s.as_ref()))
     }
 }
@@ -55,7 +58,10 @@ impl<'a> HtmlNode for ScraperHtmlNode<'a> {
         self.as_element_ref().text().join("")
     }
 
-    fn attribute<S: AsRef<str>>(&self, attr: S) -> Option<&str> {
+    fn attribute<S>(&self, attr: S) -> Option<&str>
+    where
+        S: AsRef<str>,
+    {
         self.as_element_ref().value().attr(attr.as_ref())
     }
 }
@@ -63,7 +69,10 @@ impl<'a> HtmlNode for ScraperHtmlNode<'a> {
 impl CssSelector for ScraperCssSelector {
     type Error = ParseFailed;
 
-    fn parse<S: AsRef<str>>(s: S) -> Result<Self, ParseFailed> {
+    fn parse<S>(s: S) -> Result<Self, ParseFailed>
+    where
+        S: AsRef<str>,
+    {
         Selector::parse(s.as_ref())
             .map(ScraperCssSelector)
             // FIXME The error detail is dropped

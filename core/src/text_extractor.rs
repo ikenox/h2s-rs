@@ -4,7 +4,9 @@ use std::fmt::Debug;
 
 pub trait TextExtractor {
     type Error: Error;
-    fn extract<N: HtmlNode>(&self, source: &N) -> Result<String, Self::Error>;
+    fn extract<N>(&self, source: &N) -> Result<String, Self::Error>
+    where
+        N: HtmlNode;
 }
 
 pub mod impls {
@@ -14,7 +16,10 @@ pub mod impls {
     impl TextExtractor for () {
         type Error = Never;
 
-        fn extract<N: HtmlNode>(&self, source: &N) -> Result<String, Self::Error> {
+        fn extract<N>(&self, source: &N) -> Result<String, Self::Error>
+        where
+            N: HtmlNode,
+        {
             Ok(source.text_contents())
         }
     }
@@ -28,7 +33,10 @@ pub mod impls {
     impl TextExtractor for ExtractAttribute {
         type Error = AttributeNotFound;
 
-        fn extract<N: HtmlNode>(&self, source: &N) -> Result<String, Self::Error> {
+        fn extract<N>(&self, source: &N) -> Result<String, Self::Error>
+        where
+            N: HtmlNode,
+        {
             source
                 .attribute(&self.name)
                 .map(|a| a.to_string())
@@ -111,7 +119,10 @@ mod test {
     impl CssSelector for MockSelector {
         type Error = Never;
 
-        fn parse<S: AsRef<str>>(_s: S) -> Result<Self, Self::Error> {
+        fn parse<S>(_s: S) -> Result<Self, Self::Error>
+        where
+            S: AsRef<str>,
+        {
             unimplemented!()
         }
     }
@@ -127,7 +138,10 @@ mod test {
             self.text_contents.clone()
         }
 
-        fn attribute<S: AsRef<str>>(&self, attr: S) -> Option<&str> {
+        fn attribute<S>(&self, attr: S) -> Option<&str>
+        where
+            S: AsRef<str>,
+        {
             self.attributes.get(attr.as_ref()).map(|a| a.as_str())
         }
     }

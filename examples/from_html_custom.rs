@@ -21,7 +21,10 @@ fn main() {
         type Args = ();
         type Error = MyStructError;
 
-        fn from_html<N: HtmlNode>(source: &N, _args: &Self::Args) -> Result<Self, Self::Error> {
+        fn from_html<N>(source: &N, _args: &Self::Args) -> Result<Self, Self::Error>
+        where
+            N: HtmlNode,
+        {
             Ok(MyStruct {
                 foo: source.text_contents(),
                 bar: source

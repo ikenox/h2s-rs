@@ -9,7 +9,10 @@ use crate::transformer::Transformer;
 use crate::Error;
 use crate::{CssSelector, FromHtml, HtmlNode};
 
-pub fn select<N: HtmlNode>(source: &N, selector: &'static str) -> Vec<N> {
+pub fn select<N>(source: &N, selector: &'static str) -> Vec<N>
+where
+    N: HtmlNode,
+{
     // TODO cache parsed selector
     let selector = N::Selector::parse(selector)
         // this should be never failed because the selector validity has been checked at compile-time
@@ -18,17 +21,18 @@ pub fn select<N: HtmlNode>(source: &N, selector: &'static str) -> Vec<N> {
     source.select(&selector)
 }
 
-pub fn try_transform_and_map<
-    N: HtmlNode,
-    T: FromHtml,
-    M: Mapper<T>,
-    S: Transformer<M::Structure<N>>,
->(
+pub fn try_transform_and_map<N, T, M, S>(
     source: S,
     args: &T::Args,
     selector: Option<&'static str>,
     field_name: &'static str,
-) -> Result<M, Box<dyn Error>> {
+) -> Result<M, Box<dyn Error>>
+where
+    N: HtmlNode,
+    T: FromHtml,
+    M: Mapper<T>,
+    S: Transformer<M::Structure<N>>,
+{
     source
         .try_transform()
         .map_err(StructErrorCause::StructureUnmatched)
@@ -41,7 +45,10 @@ pub fn try_transform_and_map<
         .map_err(|e| Box::new(e) as Box<dyn Error>)
 }
 
-pub fn default_argument<T: DefaultArg>() -> T {
+pub fn default_argument<T>() -> T
+where
+    T: DefaultArg,
+{
     DefaultArg::default()
 }
 

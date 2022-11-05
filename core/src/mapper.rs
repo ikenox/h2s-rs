@@ -14,7 +14,10 @@ pub trait Mapper<T>: Sized {
         T: FromHtml;
 }
 
-impl<T: FromHtml> Mapper<T> for T {
+impl<T> Mapper<T> for T
+where
+    T: FromHtml,
+{
     type Structure<U> = U;
     type Error<E: Error> = E;
 
@@ -33,12 +36,10 @@ impl<T> Mapper<T> for Option<T> {
     type Structure<U> = Option<U>;
     type Error<E: Error> = E;
 
-    fn try_map<N: HtmlNode>(
-        source: Self::Structure<N>,
-        args: &T::Args,
-    ) -> Result<Self, Self::Error<T::Error>>
+    fn try_map<N>(source: Self::Structure<N>, args: &T::Args) -> Result<Self, Self::Error<T::Error>>
     where
         T: FromHtml,
+        N: HtmlNode,
     {
         source
             .as_ref()
@@ -51,12 +52,10 @@ impl<T> Mapper<T> for Vec<T> {
     type Structure<U> = Vec<U>;
     type Error<E: Error> = ListElementError<E>;
 
-    fn try_map<N: HtmlNode>(
-        source: Self::Structure<N>,
-        args: &T::Args,
-    ) -> Result<Self, Self::Error<T::Error>>
+    fn try_map<N>(source: Self::Structure<N>, args: &T::Args) -> Result<Self, Self::Error<T::Error>>
     where
         T: FromHtml,
+        N: HtmlNode,
     {
         source
             .iter()
@@ -80,12 +79,10 @@ impl<T, const M: usize> Mapper<T> for [T; M] {
     type Structure<U> = [U; M];
     type Error<E: Error> = ListElementError<E>;
 
-    fn try_map<N: HtmlNode>(
-        source: Self::Structure<N>,
-        args: &T::Args,
-    ) -> Result<Self, Self::Error<T::Error>>
+    fn try_map<N>(source: Self::Structure<N>, args: &T::Args) -> Result<Self, Self::Error<T::Error>>
     where
         T: FromHtml,
+        N: HtmlNode,
     {
         let v = source
             .iter()
@@ -172,7 +169,10 @@ mod test {
         type Args = ();
         type Error = String;
 
-        fn from_html<N: HtmlNode>(source: &N, _args: &Self::Args) -> Result<Self, Self::Error> {
+        fn from_html<N>(source: &N, _args: &Self::Args) -> Result<Self, Self::Error>
+        where
+            N: HtmlNode,
+        {
             let text = source.text_contents();
             if text.starts_with('!') {
                 Err(text)
@@ -189,7 +189,10 @@ mod test {
     impl CssSelector for MockSelector {
         type Error = Never;
 
-        fn parse<S: AsRef<str>>(_s: S) -> Result<Self, Self::Error> {
+        fn parse<S>(_s: S) -> Result<Self, Self::Error>
+        where
+            S: AsRef<str>,
+        {
             unimplemented!()
         }
     }
@@ -205,7 +208,10 @@ mod test {
             self.0.to_string()
         }
 
-        fn attribute<S: AsRef<str>>(&self, _attr: S) -> Option<&str> {
+        fn attribute<S>(&self, _attr: S) -> Option<&str>
+        where
+            S: AsRef<str>,
+        {
             unimplemented!()
         }
     }

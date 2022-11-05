@@ -6,7 +6,9 @@ pub mod scraper;
 
 pub trait Backend {
     type Root: DocumentRoot;
-    fn parse_document<S: AsRef<str>>(s: S) -> Self::Root;
+    fn parse_document<S>(s: S) -> Self::Root
+    where
+        S: AsRef<str>;
 }
 
 pub trait DocumentRoot {
