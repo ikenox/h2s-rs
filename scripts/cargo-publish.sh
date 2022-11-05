@@ -1,9 +1,11 @@
 BASEDIR=$(dirname $0)
-cd ${BASEDIR}/../core
+pushd ${BASEDIR}/../core
 cargo publish
-cd ${BASEDIR}/../macro
+popd
+pushd ${BASEDIR}/../macro
 cargo publish
-cd ${BASEDIR}/../
+popd
+pushd ${BASEDIR}/../
 cargo publish
-
+popd
 
