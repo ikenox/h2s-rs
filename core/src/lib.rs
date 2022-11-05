@@ -1,6 +1,5 @@
 //! A core part of h2s
 
-pub mod backend;
 pub mod display;
 pub mod from_html;
 pub mod from_text;
@@ -8,7 +7,6 @@ pub mod macro_utils;
 pub mod mapper;
 pub mod text_extractor;
 pub mod transformer;
-pub mod util;
 
 use std::fmt::{Debug, Display};
 
@@ -20,14 +18,12 @@ pub trait FromHtml: Sized {
     fn from_html<N: HtmlNode>(source: &N, args: &Self::Args) -> Result<Self, Self::Error>;
 }
 
-pub trait Error: Display + Debug + 'static {}
-impl<T: Display + Debug + 'static> Error for T {}
-
 // TODO not force to clone
 /// HTML Node
 pub trait HtmlNode: Sized + Clone {
     type Selector: CssSelector;
-    fn select(&self, sel: &Self::Selector) -> Vec<Self>;
+
+    fn select(&self, selector: &Self::Selector) -> Vec<Self>;
     fn text_contents(&self) -> String;
     fn attribute<S: AsRef<str>>(&self, attr: S) -> Option<&str>;
 }
@@ -41,3 +37,8 @@ pub trait CssSelector: Sized {
 /// Similar with std::convert::Infallible
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Never {}
+
+/// Common error trait
+pub trait Error: Display + Debug + 'static {}
+
+impl<T: Display + Debug + 'static> Error for T {}

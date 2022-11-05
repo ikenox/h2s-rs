@@ -1,7 +1,6 @@
 //! All implementations of Display trait.
 //! Defining human-readable string is a different context from HTML-parsing process, so we are separating it and aggregating implementations here
 
-use crate::backend::scraper::ParseFailed;
 use crate::from_html::{FromHtmlTextError, StructErrorCause, StructFieldError};
 use crate::mapper::ListElementError;
 use crate::text_extractor::impls::AttributeNotFound;
@@ -85,12 +84,6 @@ impl Display for Never {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         // never reached here
         write!(f, "")
-    }
-}
-
-impl Display for ParseFailed {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "failed to parse css selector")
     }
 }
 

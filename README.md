@@ -60,7 +60,7 @@ let html = r#"
 </html>
 "#;
 
-let page: Page = h2s::util::parse(html).unwrap();
+let page: Page = h2s::parse(html).unwrap();
 assert_eq!(page, Page {
     blog_title: "My tech blog".into(),
     articles: vec![
