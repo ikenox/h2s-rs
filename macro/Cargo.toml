@@ -1,7 +1,7 @@
 [package]
 name = "h2s_macro"
 description = "A macro part for h2s"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Naoto Ikeno <ikenox@gmail.com>"]
 repository = "https://github.com/ikenox/h2s-rs"
 license = "MIT"
@@ -16,7 +16,7 @@ syn = "1.0.92"
 darling = "0.14.1"
 proc-macro2 = "1.0.37"
 scraper = "0.13.0"
-h2s_core = { version = "=0.1.0", path = "../core" }
+h2s_core = { version = "=0.1.1", path = "../core" }
 
 [lib]
 proc-macro = true
