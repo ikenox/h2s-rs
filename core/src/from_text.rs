@@ -1,5 +1,6 @@
+use crate::Error;
 use std::ffi::OsString;
-use std::fmt::{Debug, Display};
+
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
 use std::num::{
     NonZeroI128, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI8, NonZeroIsize, NonZeroU128,
@@ -10,7 +11,7 @@ use std::str::FromStr;
 
 // TODO cannot implement into third party structs by users
 pub trait FromText: Sized {
-    type Error: Display + Debug + 'static;
+    type Error: Error;
     fn from_text(s: &str) -> Result<Self, Self::Error>;
 }
 

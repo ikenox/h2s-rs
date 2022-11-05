@@ -45,6 +45,6 @@ pub trait CssSelector: Sized {
 pub enum Never {}
 
 /// Common error trait
-pub trait Error: Display + Debug + 'static {}
+pub trait Error: Display + Debug + Sync + Send + 'static {}
 
-impl<T> Error for T where T: Display + Debug + 'static {}
+impl<T> Error for T where T: Display + Debug + Sync + Send + 'static {}
