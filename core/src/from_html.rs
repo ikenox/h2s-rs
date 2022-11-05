@@ -4,11 +4,11 @@ use crate::from_text::FromText;
 use crate::text_extractor::impls::AttributeNotFound;
 use crate::Error;
 use crate::{FromHtml, HtmlNode};
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 
 impl<S> FromHtml for S
 where
-    S::Error: Debug + Display + 'static,
+    S::Error: Error,
     S: FromText,
 {
     type Args = ExtractionType;

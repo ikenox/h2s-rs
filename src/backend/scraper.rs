@@ -83,6 +83,8 @@ impl CssSelector for ScraperCssSelector {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ParseFailed;
 
+impl std::error::Error for ParseFailed {}
+
 impl Display for ParseFailed {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "failed to parse css selector")
