@@ -15,7 +15,9 @@ pub trait FromHtml: Sized {
     type Args;
     type Error: Error;
 
-    fn from_html<N: HtmlNode>(source: &N, args: &Self::Args) -> Result<Self, Self::Error>;
+    fn from_html<N>(source: &N, args: &Self::Args) -> Result<Self, Self::Error>
+    where
+        N: HtmlNode;
 }
 
 // TODO not force to clone
@@ -25,13 +27,17 @@ pub trait HtmlNode: Sized + Clone {
 
     fn select(&self, selector: &Self::Selector) -> Vec<Self>;
     fn text_contents(&self) -> String;
-    fn attribute<S: AsRef<str>>(&self, attr: S) -> Option<&str>;
+    fn attribute<S>(&self, attr: S) -> Option<&str>
+    where
+        S: AsRef<str>;
 }
 
 /// CSS Selector
 pub trait CssSelector: Sized {
     type Error: Error;
-    fn parse<S: AsRef<str>>(s: S) -> Result<Self, Self::Error>;
+    fn parse<S>(s: S) -> Result<Self, Self::Error>
+    where
+        S: AsRef<str>;
 }
 
 /// Similar with std::convert::Infallible
@@ -41,4 +47,4 @@ pub enum Never {}
 /// Common error trait
 pub trait Error: Display + Debug + 'static {}
 
-impl<T: Display + Debug + 'static> Error for T {}
+impl<T> Error for T where T: Display + Debug + 'static {}

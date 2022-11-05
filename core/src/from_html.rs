@@ -6,9 +6,10 @@ use crate::Error;
 use crate::{FromHtml, HtmlNode};
 use std::fmt::{Debug, Display};
 
-impl<S: FromText> FromHtml for S
+impl<S> FromHtml for S
 where
     S::Error: Debug + Display + 'static,
+    S: FromText,
 {
     type Args = ExtractionType;
     type Error = FromHtmlTextError<AttributeNotFound, S::Error>;
@@ -22,14 +23,22 @@ where
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct StructFieldError<A: Error, B: Error> {
+pub struct StructFieldError<A, B>
+where
+    A: Error,
+    B: Error,
+{
     pub selector: Option<String>,
     pub field_name: String,
     pub error: StructErrorCause<A, B>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub enum StructErrorCause<A: Error, B: Error> {
+pub enum StructErrorCause<A, B>
+where
+    A: Error,
+    B: Error,
+{
     StructureUnmatched(A),
     ParseError(B),
 }
@@ -40,7 +49,10 @@ pub enum ExtractionType {
 }
 
 impl ExtractionType {
-    fn extract<N: HtmlNode>(&self, source: &N) -> Result<String, AttributeNotFound> {
+    fn extract<N>(&self, source: &N) -> Result<String, AttributeNotFound>
+    where
+        N: HtmlNode,
+    {
         match self {
             ExtractionType::Text => Ok(source.text_contents()),
             ExtractionType::Attribute(name) => source
@@ -52,7 +64,11 @@ impl ExtractionType {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub enum FromHtmlTextError<A: Error, B: Error> {
+pub enum FromHtmlTextError<A, B>
+where
+    A: Error,
+    B: Error,
+{
     ExtractionFailed(A),
     TextParseError(B),
 }

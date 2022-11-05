@@ -9,7 +9,11 @@ use crate::Error;
 use crate::Never;
 use std::fmt::{Display, Formatter};
 
-impl<A: Error, B: Error> Display for StructFieldError<A, B> {
+impl<A, B> Display for StructFieldError<A, B>
+where
+    A: Error,
+    B: Error,
+{
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -27,7 +31,11 @@ impl<A: Error, B: Error> Display for StructFieldError<A, B> {
     }
 }
 
-impl<A: Error, B: Error> Display for FromHtmlTextError<A, B> {
+impl<A, B> Display for FromHtmlTextError<A, B>
+where
+    A: Error,
+    B: Error,
+{
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "failed to convert text into the value: ")?;
         match &self {
@@ -87,7 +95,10 @@ impl Display for Never {
     }
 }
 
-impl<E: Error> Display for ListElementError<E> {
+impl<E> Display for ListElementError<E>
+where
+    E: Error,
+{
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "[{}]: {}", self.index, self.error)
     }
