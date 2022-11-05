@@ -5,7 +5,6 @@ version = "0.1.0"
 authors = ["Naoto Ikeno <ikenox@gmail.com>"]
 repository = "https://github.com/ikenox/h2s-rs"
 license = "MIT"
-readme = "README.md"
 edition = "2021"
 rust-version = "1.65"
 
