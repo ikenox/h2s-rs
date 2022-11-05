@@ -192,7 +192,7 @@ dependencies = [
 
 [[package]]
 name = "h2s"
-version = "0.1.1"
+version = "0.1.3"
 dependencies = [
  "h2s_core",
  "h2s_macro",
@@ -202,14 +202,14 @@ dependencies = [
 
 [[package]]
 name = "h2s_core"
-version = "0.1.1"
+version = "0.1.3"
 dependencies = [
  "maplit",
 ]
 
 [[package]]
 name = "h2s_macro"
-version = "0.1.1"
+version = "0.1.3"
 dependencies = [
  "darling",
  "h2s_core",
