@@ -58,7 +58,6 @@ mod test {
     use crate::text_extractor::impls::AttributeNotFound;
     use crate::Never;
     use crate::{CssSelector, FromHtml, HtmlNode};
-    use maplit::hashmap;
     use std::collections::HashMap;
 
     #[test]
@@ -66,9 +65,7 @@ mod test {
         assert_eq!(
             String::from_html(
                 &MockElement {
-                    attributes: hashmap! {
-                        "foo".to_string() => "bar".to_string(),
-                    },
+                    attributes: std::iter::once(("foo".to_string(), "bar".to_string())).collect(),
                     ..Default::default()
                 },
                 &ExtractionType::Attribute("foo".to_string())
@@ -80,9 +77,7 @@ mod test {
         assert_eq!(
             String::from_html(
                 &MockElement {
-                    attributes: hashmap! {
-                        "foo".to_string() => "bar".to_string(),
-                    },
+                    attributes: std::iter::once(("foo".to_string(), "bar".to_string())).collect(),
                     ..Default::default()
                 },
                 &ExtractionType::Attribute("aaa".to_string())
