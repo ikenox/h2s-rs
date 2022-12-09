@@ -98,7 +98,7 @@ impl H2sFieldReceiver {
                             .as_ref()
                             .and_then(|id| id.span().join(self.ty.span()))
                             .unwrap_or_else(|| self.ty.span()),
-                        format!("invalid css selector: `{}`", selector),
+                        format!("invalid css selector: `{selector}`"),
                     )
                     .to_compile_error();
                 }
