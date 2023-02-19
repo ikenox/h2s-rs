@@ -7,6 +7,8 @@
 //!
 //! #[derive(FromHtml, Debug, Eq, PartialEq)]
 //! pub struct Page {
+//!     #[h2s(attr = "lang")]
+//!     lang: String,
 //!     #[h2s(select = "div > h1.blog-title")]
 //!     blog_title: String,
 //!     #[h2s(select = ".articles > div")]
@@ -28,7 +30,7 @@
 //! }
 //!
 //! let html = r#"
-//! <html>
+//! <html lang="en">
 //! <body>
 //! <div>
 //!     <h1 class="blog-title">My tech blog</h1>
@@ -58,6 +60,7 @@
 //!
 //! let page: Page = h2s::parse(html).unwrap();
 //! assert_eq!(page, Page {
+//!     lang: "en".into(),
 //!     blog_title: "My tech blog".into(),
 //!     articles: vec![
 //!         Article {
