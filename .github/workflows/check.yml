@@ -2,7 +2,7 @@ name: Check
 
 on:
   push:
-  schedule: [cron: "7 0 * * *"]
+  schedule: [ cron: "7 0 * * *" ]
 
 env:
   RUST_BACKTRACE: 1
@@ -17,6 +17,8 @@ jobs:
         uses: baptiste0928/cargo-install@v1
         with:
           crate: cargo-readme
+          # use forked cargo-readme to work with package metadata inheritance
+          args: "--git https://github.com/ikenox/cargo-readme.git"
       - uses: Swatinem/rust-cache@v1
       - name: diff README.md
         run: cargo readme | diff README.md -
