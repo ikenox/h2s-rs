@@ -221,7 +221,7 @@ dependencies = [
 
 [[package]]
 name = "h2s"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "h2s_core",
  "h2s_macro",
@@ -231,11 +231,11 @@ dependencies = [
 
 [[package]]
 name = "h2s_core"
-version = "0.1.4"
+version = "0.1.5"
 
 [[package]]
 name = "h2s_macro"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "darling",
  "h2s_core",
