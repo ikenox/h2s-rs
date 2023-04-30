@@ -16,8 +16,8 @@ keywords = ["html", "dom", "parser"]
 members = ["macro", "core"]
 
 [dependencies]
-h2s_core = { version = "=0.1.4", path = "core" }
-h2s_macro = { version = "=0.1.4", path = "macro" }
+h2s_core = { path = "core" }
+h2s_macro = { path = "macro" }
 
 itertools = "0.10.3"
 scraper = { version = "0.16.0", optional = true }

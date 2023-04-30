@@ -16,7 +16,7 @@ syn = "1.0.92"
 darling = "0.14.1"
 proc-macro2 = "1.0.37"
 scraper = "0.13.0" # TODO remove this dependency
-h2s_core = { version = "=0.1.4", path = "../core" }
+h2s_core = { path = "../core" }
 
 [lib]
 proc-macro = true
