@@ -21,9 +21,9 @@ jobs:
         uses: taiki-e/install-action@v1
         with:
           tool: cargo-release
-      - run: git checkout -b v${{ inputs.version }}
+      - run: git checkout -b release/v${{ inputs.version }}
       - run: cargo release version ${{ inputs.version }} --workspace
-      - run: cargo release tag --workspace
-      - run: cargo release push --workspace
+      - run: git tag v${{ inputs.version }}
       - run: git commit -m "v${{ inputs.version }}"
+      - run: git push origin v${{ inputs.version }}
       - run: gh pr create -B release
