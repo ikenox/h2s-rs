@@ -1,7 +1,7 @@
 [package]
 name = "h2s"
 description = "A declarative HTML parser, which works like a deserializer from HTML to struct"
-version = { workspace = true }
+version = "0.1.5"
 authors = { workspace = true }
 repository = { workspace = true }
 license = { workspace = true }
@@ -15,7 +15,6 @@ keywords = ["html", "dom", "parser", "scraper", "parsing", "scraping"]
 members = ["macro", "core"]
 
 [workspace.package]
-version = "0.1.5"
 authors = ["Naoto Ikeno <ikenox@gmail.com>"]
 repository = "https://github.com/ikenox/h2s-rs"
 license = "MIT"
@@ -24,8 +23,8 @@ edition = "2021"
 rust-version = "1.65"
 
 [dependencies]
-h2s_core = { path = "core" }
-h2s_macro = { path = "macro" }
+h2s_core = { path = "core", version = "0.1.5" }
+h2s_macro = { path = "macro", version = "0.1.5" }
 
 itertools = "0.10.3"
 scraper = { version = "0.16.0", optional = true }
