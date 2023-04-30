@@ -1,4 +1,4 @@
-name: Check
+name: CI
 
 on:
   push:
@@ -47,8 +47,6 @@ jobs:
       matrix:
         include:
           - { rust: nightly, os: ubuntu-latest }
-          - { rust: nightly, os: macos-latest }
-          - { rust: nightly, os: windows-latest }
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1

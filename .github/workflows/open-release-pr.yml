@@ -21,8 +21,9 @@ jobs:
         uses: taiki-e/install-action@v1
         with:
           tool: cargo-release
-      - uses: cargo-bins/release-pr@v2
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          version: ${{ inputs.version }}
-          crate-release-all: true
+      - run: git checkout -b v${{ inputs.version }}
+      - run: cargo release version ${{ inputs.version }} --workspace
+      - run: cargo release tag --workspace
+      - run: cargo release push --workspace
+      - run: git commit -m "v${{ inputs.version }}"
+      - run: gh pr create -B release
