@@ -17,16 +17,16 @@ where
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "({}){}: ",
+            "[{}{}]: ",
             self.field_name,
             self.selector
                 .as_ref()
-                .map(|s| format!(" {s}"))
+                .map(|s| format!("({s})"))
                 .unwrap_or_else(|| "".into()),
         )?;
         match &self.error {
-            StructErrorCause::StructureUnmatched(e) => write!(f, "structure unmatched: {e}"),
-            StructErrorCause::ParseError(e) => write!(f, "failed to parse: {e}"),
+            StructErrorCause::StructureUnmatched(e) => write!(f, "{e}"),
+            StructErrorCause::ParseError(e) => write!(f, "{e}"),
         }
     }
 }
@@ -100,7 +100,7 @@ where
     E: Error,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[{}]: {}", self.index, self.error)
+        write!(f, "(index={}): {}", self.index, self.error)
     }
 }
 
