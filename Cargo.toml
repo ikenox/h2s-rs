@@ -9,7 +9,7 @@ edition = { workspace = true }
 rust-version = { workspace = true }
 
 categories = ["parsing"]
-keywords = ["html", "dom", "parser", "scraper", "parsing", "scraping"]
+keywords = ["html", "dom", "parser", "parsing", "scraping"]
 
 [workspace]
 members = ["macro", "core"]
