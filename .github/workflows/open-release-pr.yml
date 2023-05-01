@@ -29,3 +29,5 @@ jobs:
       - run: git commit -am "v${{ inputs.version }}"
       - run: git push origin v${{ inputs.version }}
       - run: gh pr create
+        env:
+          GH_TOKEN: ${{ github.token }}
