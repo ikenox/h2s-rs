@@ -1,15 +1,38 @@
-name: Cargo publish
+name: Open a release PR
 on:
-  release:
-    types:
-      - published
-
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release
+        required: true
+        type: string
 jobs:
-  cargo-publish:
+  make-release-pr:
+    permissions:
+      id-token: write # Enable OIDC
+      pull-requests: write
+      contents: write
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Install cargo-release
-        uses: taiki-e/install-action@v1
         with:
-          tool: cargo-release
-      - run: cargo release publish --workspace --execute --no-confirm
+          fetch-depth: 0
+      - uses: chainguard-dev/actions/setup-gitsign@main
+      - name: install cargo-release
+        uses: baptiste0928/cargo-install@v1
+        with:
+          crate: cargo-release
+      - run: git checkout -b release/v${{ inputs.version }}
+      - run: cargo release version ${{ inputs.version }} --workspace --execute --no-confirm
+      - run: git commit -am "v${{ inputs.version }}"
+      - run: git tag v${{ inputs.version }}
+      - run: git push origin v${{ inputs.version }} --tags
+      - run: gh pr create
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - run: gh pr merge release/v${{ inputs.version }} -d
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - run: gh release create v${{ inputs.version }}
+        env:
+          GH_TOKEN: ${{ github.token }}
