@@ -6,21 +6,10 @@ on:
 
 jobs:
   cargo-publish:
-    permissions:
-      id-token: write # Enable OIDC
-      pull-requests: write
-      contents: write
-    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: chainguard-dev/actions/setup-gitsign@main
       - name: Install cargo-release
         uses: taiki-e/install-action@v1
         with:
           tool: cargo-release
-      - run: git checkout -b release/v${{ inputs.version }}
-      - run: cargo release version ${{ inputs.version }} --workspace
-      - run: git tag v${{ inputs.version }}
-      - run: git commit -m "v${{ inputs.version }}"
-      - run: git push origin v${{ inputs.version }}
-      - run: gh pr create -B release
+      - run: cargo release publish --workspace --execute --no-confirm

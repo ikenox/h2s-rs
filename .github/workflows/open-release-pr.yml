@@ -22,8 +22,10 @@ jobs:
         with:
           tool: cargo-release
       - run: git checkout -b release/v${{ inputs.version }}
-      - run: cargo release version ${{ inputs.version }} --workspace
+      - run: cargo release version ${{ inputs.version }} --workspace --execute --no-confirm
       - run: git tag v${{ inputs.version }}
       - run: git commit -am "v${{ inputs.version }}"
       - run: git push origin v${{ inputs.version }}
-      - run: gh pr create -B release
+      - run: gh pr create
+      - run: gh pr merge -d release/v${{ inputs.version }}
+      - run: gh release create v${{ inputs.version }}
