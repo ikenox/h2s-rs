@@ -86,10 +86,14 @@
 //!     ]
 //! });
 //!
-//! // When the input HTML document structure does not match the expected, `h2s::parse` will return an error with a detailed reason.
+//! // When the input HTML document structure does not match the expected,
+//! // `h2s::parse` will return an error with a detailed reason.
 //! let invalid_html = html.replace(r#"<a href="https://example.com/3">article3</a>"#, "");
 //! let err = h2s::parse::<Page>(invalid_html).unwrap_err();
-//! assert_eq!(err.to_string(), "[articles(.articles > div)]: (index=2): [title(h2 > a)]: expected exactly one element, but no elements found");
+//! assert_eq!(
+//!   err.to_string(),
+//!   "[articles(.articles > div)]: (index=2): [title(h2 > a)]: expected exactly one element, but no elements found"
+//! );
 //! ```
 //!
 //! # Supported types
@@ -109,10 +113,11 @@
 //!   - `Option<T>`
 //!   - `Vec<T>`
 
-use crate::backend::scraper::Scraper;
-use crate::backend::{Backend, DocumentRoot};
 pub use h2s_core::*;
 pub use h2s_macro::*;
+
+use crate::backend::scraper::Scraper;
+use crate::backend::{Backend, DocumentRoot};
 
 pub mod backend;
 
