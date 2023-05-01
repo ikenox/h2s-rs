@@ -1,15 +1,16 @@
 name: Cargo publish
 on:
   release:
-    types:
-      - published
+    types: [ published ]
+  workflow_dispatch:
 
 jobs:
   cargo-publish:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Install cargo-release
-        uses: taiki-e/install-action@v1
+      - name: install cargo-release
+        uses: baptiste0928/cargo-install@v1
         with:
-          tool: cargo-release
+          crate: cargo-release
       - run: cargo release publish --workspace --execute --no-confirm
