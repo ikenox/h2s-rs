@@ -2,7 +2,7 @@
 //! Defining human-readable string is a different context from HTML-parsing process, so we are separating it and aggregating implementations here
 
 use crate::from_html::{FromHtmlTextError, StructErrorCause, StructFieldError};
-use crate::mapper::ListElementError;
+use crate::mapper::impls::ListElementError;
 use crate::text_extractor::impls::AttributeNotFound;
 use crate::transformer::{VecToArrayError, VecToOptionError, VecToSingleError};
 use crate::Error;
