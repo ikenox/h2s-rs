@@ -14,106 +14,120 @@ pub trait Mapper<T>: Sized {
         T: FromHtml;
 }
 
-impl<T> Mapper<T> for T
-where
-    T: FromHtml,
-{
-    type Structure<U> = U;
-    type Error<E: Error> = E;
+pub mod impls {
+    use super::*;
 
-    fn try_map<N: HtmlNode>(
-        source: Self::Structure<N>,
-        args: &T::Args,
-    ) -> Result<Self, Self::Error<T::Error>>
+    impl<T> Mapper<T> for T
     where
         T: FromHtml,
     {
-        T::from_html(&source, args)
+        type Structure<U> = U;
+        type Error<E: Error> = E;
+
+        fn try_map<N: HtmlNode>(
+            source: Self::Structure<N>,
+            args: &T::Args,
+        ) -> Result<Self, Self::Error<T::Error>>
+        where
+            T: FromHtml,
+        {
+            T::from_html(&source, args)
+        }
     }
-}
 
-impl<T> Mapper<T> for Option<T> {
-    type Structure<U> = Option<U>;
-    type Error<E: Error> = E;
+    impl<T> Mapper<T> for Option<T> {
+        type Structure<U> = Option<U>;
+        type Error<E: Error> = E;
 
-    fn try_map<N>(source: Self::Structure<N>, args: &T::Args) -> Result<Self, Self::Error<T::Error>>
-    where
-        T: FromHtml,
-        N: HtmlNode,
-    {
-        source
-            .as_ref()
-            .map(|n| T::from_html(n, args))
-            .map_or(Ok(None), |v| v.map(Some))
+        fn try_map<N>(
+            source: Self::Structure<N>,
+            args: &T::Args,
+        ) -> Result<Self, Self::Error<T::Error>>
+        where
+            T: FromHtml,
+            N: HtmlNode,
+        {
+            source
+                .as_ref()
+                .map(|n| T::from_html(n, args))
+                .map_or(Ok(None), |v| v.map(Some))
+        }
     }
-}
 
-impl<T> Mapper<T> for Vec<T> {
-    type Structure<U> = Vec<U>;
-    type Error<E: Error> = ListElementError<E>;
+    impl<T> Mapper<T> for Vec<T> {
+        type Structure<U> = Vec<U>;
+        type Error<E: Error> = ListElementError<E>;
 
-    fn try_map<N>(source: Self::Structure<N>, args: &T::Args) -> Result<Self, Self::Error<T::Error>>
-    where
-        T: FromHtml,
-        N: HtmlNode,
-    {
-        source
-            .iter()
-            .enumerate()
-            .map(|(i, n)| {
-                T::from_html(n, args).map_err(|e| ListElementError { index: i, error: e })
-            })
-            // unwrapping results
-            .fold(Ok(vec![]), |acc, res| {
-                acc.and_then(|mut list| {
-                    res.map(|val| {
-                        list.push(val);
-                        list
+        fn try_map<N>(
+            source: Self::Structure<N>,
+            args: &T::Args,
+        ) -> Result<Self, Self::Error<T::Error>>
+        where
+            T: FromHtml,
+            N: HtmlNode,
+        {
+            source
+                .iter()
+                .enumerate()
+                .map(|(i, n)| {
+                    T::from_html(n, args).map_err(|e| ListElementError { index: i, error: e })
+                })
+                // unwrapping results
+                .fold(Ok(vec![]), |acc, res| {
+                    acc.and_then(|mut list| {
+                        res.map(|val| {
+                            list.push(val);
+                            list
+                        })
                     })
                 })
-            })
+        }
     }
-}
 
-impl<T, const M: usize> Mapper<T> for [T; M] {
-    type Structure<U> = [U; M];
-    type Error<E: Error> = ListElementError<E>;
+    impl<T, const M: usize> Mapper<T> for [T; M] {
+        type Structure<U> = [U; M];
+        type Error<E: Error> = ListElementError<E>;
 
-    fn try_map<N>(source: Self::Structure<N>, args: &T::Args) -> Result<Self, Self::Error<T::Error>>
-    where
-        T: FromHtml,
-        N: HtmlNode,
-    {
-        let v = source
-            .iter()
-            .enumerate()
-            .map(|(i, n)| {
-                T::from_html(n, args).map_err(|e| ListElementError { index: i, error: e })
-            })
-            .fold(Ok(vec![]), |acc, res| {
-                acc.and_then(|mut list| {
-                    res.map(|val| {
-                        list.push(val);
-                        list
-                    })
+        fn try_map<N>(
+            source: Self::Structure<N>,
+            args: &T::Args,
+        ) -> Result<Self, Self::Error<T::Error>>
+        where
+            T: FromHtml,
+            N: HtmlNode,
+        {
+            let v = source
+                .iter()
+                .enumerate()
+                .map(|(i, n)| {
+                    T::from_html(n, args).map_err(|e| ListElementError { index: i, error: e })
                 })
-            })?;
+                .fold(Ok(vec![]), |acc, res| {
+                    acc.and_then(|mut list| {
+                        res.map(|val| {
+                            list.push(val);
+                            list
+                        })
+                    })
+                })?;
 
-        // this conversion should never fail
-        // TODO avoid unwrap
-        Ok(v.try_into().map_err(|_| "").unwrap())
+            // this conversion should never fail
+            // TODO avoid unwrap
+            Ok(v.try_into().map_err(|_| "").unwrap())
+        }
     }
-}
 
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct ListElementError<E: Error> {
-    pub index: usize,
-    pub error: E,
+    #[derive(Debug, Clone, Eq, PartialEq)]
+    pub struct ListElementError<E: Error> {
+        pub index: usize,
+        pub error: E,
+    }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::mapper::impls::ListElementError;
     use crate::CssSelector;
     use crate::Never;
     use std::fmt::{Display, Formatter};

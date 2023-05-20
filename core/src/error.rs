@@ -1,7 +1,7 @@
 //! Implementations of `std::error::Error`
 
 use crate::from_html::{FromHtmlTextError, StructFieldError};
-use crate::mapper::ListElementError;
+use crate::mapper::impls::ListElementError;
 use crate::text_extractor::impls::AttributeNotFound;
 use crate::transformer::{VecToArrayError, VecToOptionError, VecToSingleError};
 use crate::{Error, Never};
