@@ -122,7 +122,7 @@ use crate::backend::{Backend, DocumentRoot};
 pub mod backend;
 
 /// A shorthand method without specifying backend HTML parser
-#[cfg(any(feature = "backend-scraper"))]
+#[cfg(feature = "backend-scraper")]
 pub fn parse<T>(html: impl AsRef<str>) -> Result<T, T::Error>
 where
     for<'b> T: FromHtml<Args = ()>,
