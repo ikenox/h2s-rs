@@ -92,7 +92,7 @@
 //! let err = h2s::parse::<Page>(invalid_html).unwrap_err();
 //! assert_eq!(
 //!   err.to_string(),
-//!   "[articles(.articles > div)]: (index=2): [title(h2 > a)]: expected exactly one element, but no elements found"
+//!   "articles(.articles > div): [2]: title(h2 > a): expected exactly one element, but no elements found"
 //! );
 //! ```
 //!

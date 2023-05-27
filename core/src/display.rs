@@ -17,7 +17,7 @@ where
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "[{}{}]: ",
+            "{}{}: ",
             self.field_name,
             self.selector
                 .as_ref()
@@ -100,7 +100,7 @@ where
     E: Error,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(index={}): {}", self.index, self.error)
+        write!(f, "[{}]: {}", self.index, self.error)
     }
 }
 
