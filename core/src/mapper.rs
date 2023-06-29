@@ -1,5 +1,32 @@
 use crate::{Error, FromHtml, HtmlNode};
 
+pub struct Id<T>(pub T);
+
+pub trait Functor<T> {
+    type This<A>: FunctorExt<A>;
+    fn fmap<B>(this: Self::This<T>, f: impl Fn(T) -> B) -> Self::This<B>;
+}
+
+pub trait FunctorExt<T>: Functor<T, This<T> = Self> {
+    fn fmap<B>(self, f: impl Fn(T) -> B) -> Self::This<B>;
+}
+
+impl<T, F: Functor<T, This<T> = Self>> FunctorExt<T> for F {
+    fn fmap<B>(self, f: impl Fn(T) -> B) -> Self::This<B> {
+        F::fmap(self, f)
+    }
+}
+
+impl<T> Functor<T> for Id<T> {
+    type This<A> = Id<A>;
+
+    fn fmap<B>(this: Self::This<T>, f: impl Fn(T) -> B) -> Self::This<B> {
+        Id(f(this.0))
+    }
+}
+
+pub trait FoldError {}
+
 /// `Mapper` maps `F<N: HtmlNode>` -> `Result<F<T: FromHtml>>`
 pub trait Mapper<T>: Sized {
     type Structure<U>;
@@ -126,11 +153,13 @@ pub mod impls {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use std::fmt::{Display, Formatter};
+
     use crate::mapper::impls::ListElementError;
     use crate::CssSelector;
     use crate::Never;
-    use std::fmt::{Display, Formatter};
+
+    use super::*;
 
     #[derive(Debug, Clone, Eq, PartialEq)]
     pub struct ErrorImpl(String);

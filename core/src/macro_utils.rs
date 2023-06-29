@@ -3,9 +3,8 @@
 //! You wouldn't call these methods directly in your code.
 
 use crate::from_html::{ExtractionType, StructErrorCause, StructFieldError};
-use crate::mapper::Mapper;
-use crate::transformer::Transformer;
-
+use crate::mapper::{Functor, FunctorExt, Mapper};
+use crate::transformer::{Transformer, VecToArrayError};
 use crate::Error;
 use crate::{CssSelector, FromHtml, HtmlNode};
 
@@ -19,6 +18,26 @@ where
         // TODO avoid unwrap
         .unwrap();
     source.select(&selector)
+}
+
+pub fn try_transform_and_map2<N, T, F, S>(
+    source: S,
+    args: &T::Args,
+    selector: Option<&'static str>,
+    field_name: &'static str,
+) -> Result<F, Box<dyn Error>>
+where
+    N: HtmlNode,
+    T: FromHtml,
+    F: FunctorExt<T>,
+    S: Transformer<F::This<N>>,
+{
+    let a: F::This<N> = source.try_transform().unwrap();
+    let mapped = a.fmap(|n: N| T::from_html(&n, args));
+    Err(Box::new(VecToArrayError::ElementNumberUnmatched {
+        expected: 0,
+        found: 0,
+    }))
 }
 
 pub fn try_transform_and_map<N, T, M, S>(
