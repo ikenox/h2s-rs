@@ -2,22 +2,27 @@ use crate::{Error, FromHtml, HtmlNode};
 
 pub struct Id<T>(pub T);
 
-pub trait Functor<T> {
-    type This<A>: FunctorExt<A>;
-    fn fmap<B>(this: Self::This<T>, f: impl Fn(T) -> B) -> Self::This<B>;
+pub trait FunctorBase {
+    type Inner;
+    type This<A>: Functor<Inner2 = Self::Inner>;
+    fn fmap<B>(this: Self::This<Self::Inner>, f: impl Fn(Self::Inner) -> B) -> Self::This<B>;
 }
 
-pub trait FunctorExt<T>: Functor<T, This<T> = Self> {
-    fn fmap<B>(self, f: impl Fn(T) -> B) -> Self::This<B>;
+pub trait Functor: FunctorBase<This<Self::Inner2> = Self> {
+    type Inner2;
+    fn fmap<B>(self, f: impl Fn(Self::Inner2) -> B) -> Self::This<B>;
 }
 
-impl<T, F: Functor<T, This<T> = Self>> FunctorExt<T> for F {
-    fn fmap<B>(self, f: impl Fn(T) -> B) -> Self::This<B> {
+impl<F: FunctorBase<This<Self::Inner> = Self>> Functor for F {
+    type Inner2 = Self::Inner;
+
+    fn fmap<B>(self, f: impl Fn(Self::Inner2) -> B) -> Self::This<B> {
         F::fmap(self, f)
     }
 }
 
-impl<T> Functor<T> for Id<T> {
+impl<T> FunctorBase for Id<T> {
+    type Inner = T;
     type This<A> = Id<A>;
 
     fn fmap<B>(this: Self::This<T>, f: impl Fn(T) -> B) -> Self::This<B> {
@@ -25,7 +30,7 @@ impl<T> Functor<T> for Id<T> {
     }
 }
 
-pub trait FoldError {}
+pub trait Foldable {}
 
 /// `Mapper` maps `F<N: HtmlNode>` -> `Result<F<T: FromHtml>>`
 pub trait Mapper<T>: Sized {

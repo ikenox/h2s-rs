@@ -3,7 +3,7 @@
 //! You wouldn't call these methods directly in your code.
 
 use crate::from_html::{ExtractionType, StructErrorCause, StructFieldError};
-use crate::mapper::{Functor, FunctorExt, Mapper};
+use crate::mapper::{Functor, FunctorBase, Mapper};
 use crate::transformer::{Transformer, VecToArrayError};
 use crate::Error;
 use crate::{CssSelector, FromHtml, HtmlNode};
@@ -29,7 +29,7 @@ pub fn try_transform_and_map2<N, T, F, S>(
 where
     N: HtmlNode,
     T: FromHtml,
-    F: FunctorExt<T>,
+    F: Functor<Inner = T>,
     S: Transformer<F::This<N>>,
 {
     let a: F::This<N> = source.try_transform().unwrap();
