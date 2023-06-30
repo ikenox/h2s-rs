@@ -2,13 +2,13 @@ use crate::{Error, FromHtml, HtmlNode};
 
 pub struct Id<T>(pub T);
 
-pub trait IsSelf {}
+pub trait FunctorConstraint {}
 
-impl<F> IsSelf for F where F: Functor<This<<Self as Functor>::Inner> = Self> {}
+impl<F> FunctorConstraint for F where F: Functor<This<<Self as Functor>::Inner> = Self> {}
 
-pub trait Functor: IsSelf {
+pub trait Functor: FunctorConstraint {
     type Inner;
-    type This<A>: Functor;
+    type This<A>: Functor<Inner = A>;
     fn fmap<B>(self, f: impl Fn(Self::Inner) -> B) -> Self::This<B>;
 }
 
@@ -21,7 +21,34 @@ impl<T> Functor for Id<T> {
     }
 }
 
+pub trait Applicative {
+    type Inner;
+    type This<A>: Applicative;
+    fn pure(inner: Self::Inner) -> Self;
+    fn ap<B, F>(self, f: Self::This<F>) -> Self::This<B>
+    where
+        F: Fn(Self::Inner) -> B;
+}
+
+impl<T, E> Applicative for Result<T, E> {
+    type Inner = T;
+    type This<A> = Result<A, E>;
+
+    fn pure(inner: Self::Inner) -> Self {
+        Ok(inner)
+    }
+
+    fn ap<B, F>(self, f: Self::This<F>) -> Self::This<B>
+    where
+        F: Fn(Self::Inner) -> B,
+    {
+        self.and_then(|t| f.map(|f| f(t)))
+    }
+}
+
 pub trait Foldable {}
+
+pub trait Traversable: Functor + Foldable {}
 
 /// `Mapper` maps `F<N: HtmlNode>` -> `Result<F<T: FromHtml>>`
 pub trait Mapper<T>: Sized {
