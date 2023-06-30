@@ -4,61 +4,86 @@ pub struct Identity<T>(pub T);
 
 pub trait Functor {
     type Inner;
-    type This<A>: Functor<Inner = A>;
-    fn fmap<B>(self, f: impl Fn(Self::Inner) -> B) -> Self::This<B>;
+    type This1<A>: Functor<Inner = A>;
+    fn fmap<B>(self, f: impl Fn(Self::Inner) -> B) -> Self::This1<B>;
 }
 
-pub trait Applicative {
+pub trait Applicative: Functor {
     type Inner2;
-    type This<A>: Applicative<Inner2 = A>;
+    type This2<A>: Applicative<Inner2 = A>;
     fn pure(inner: Self::Inner2) -> Self;
-    fn ap<B, F>(self, f: Self::This<F>) -> Self::This<B>
+    fn ap<B, F>(self, f: Self::This2<F>) -> Self::This2<B>
     where
         F: Fn(Self::Inner2) -> B;
 }
 
-pub trait Monad {
+pub trait Monad: Applicative {
     type Inner3;
-    type This<A>: Monad<Inner3 = A>;
-    fn bind<B: Monad, F>(self, f: F) -> Self::This<B>
+    type This3<A>: Monad<Inner3 = A>;
+    fn bind<B, F>(self, f: F) -> Self::This3<B>
     where
-        F: Fn(Self::Inner3) -> Self::This<B>;
+        F: Fn(Self::Inner3) -> Self::This3<B>;
 }
 
 impl<T> Functor for Identity<T> {
     type Inner = T;
-    type This<A> = Identity<A>;
+    type This1<A> = Identity<A>;
 
-    fn fmap<B>(self, f: impl Fn(Self::Inner) -> B) -> Self::This<B> {
+    fn fmap<B>(self, f: impl Fn(Self::Inner) -> B) -> Self::This1<B> {
         Identity(f(self.0))
     }
 }
 
 impl<T> Functor for Option<T> {
     type Inner = T;
-    type This<A> = Option<A>;
+    type This1<A> = Option<A>;
 
-    fn fmap<B>(self, f: impl Fn(Self::Inner) -> B) -> Self::This<B> {
+    fn fmap<B>(self, f: impl Fn(Self::Inner) -> B) -> Self::This1<B> {
         self.map(f)
     }
 }
 
-impl<T, E> Applicative for Result<T, E> {
-    type Inner2 = T;
-    type This<A> = Result<A, E>;
+impl<T, E> Functor for Result<T, E> {
+    type Inner = T;
+    type This1<A> = Result<A, E>;
 
-    fn ap<B, F>(self, f: Self::This<F>) -> Self::This<B>
+    fn fmap<B>(self, f: impl Fn(Self::Inner) -> B) -> Self::This1<B> {
+        self.bind(|a| <Self::This1<B>>::pure(f(a)))
+    }
+}
+
+impl<T, E> Applicative for Result<T, E> {
+    type Inner2 = Self::Inner;
+    type This2<A> = Self::This1<A>;
+
+    fn pure(inner: Self::Inner2) -> Self {
+        Ok(inner)
+    }
+
+    fn ap<B, F>(self, f: Self::This2<F>) -> Self::This2<B>
     where
         F: Fn(Self::Inner2) -> B,
     {
-        self.and_then(|t| f.map(|f| f(t)))
+        self.bind(|a| f.bind(|f| <Self::This2<B>>::pure(f(a))))
+    }
+}
+
+impl<T, E> Monad for Result<T, E> {
+    type Inner3 = Self::Inner2;
+    type This3<A> = Self::This2<A>;
+
+    fn bind<B, F>(self, f: F) -> Self::This3<B>
+    where
+        F: Fn(Self::Inner3) -> Self::This3<B>,
+    {
+        self.and_then(|a| f(a))
     }
 }
 
 pub trait Foldable {}
 
 pub trait Traversable: Functor + Foldable {
-    fn traverse<A, F>(self, f: F) -> A::This<Self::This<A::Inner2>>
+    fn traverse<A, F>(self, f: F) -> A::This2<Self::This1<A::Inner2>>
     where
         A: Applicative,
         F: Fn(Self::Inner) -> A;
