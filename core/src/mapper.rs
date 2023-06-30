@@ -2,11 +2,7 @@ use crate::{Error, FromHtml, HtmlNode};
 
 pub struct Id<T>(pub T);
 
-pub trait FunctorConstraint {}
-
-impl<F> FunctorConstraint for F where F: Functor<This<<Self as Functor>::Inner> = Self> {}
-
-pub trait Functor: FunctorConstraint {
+pub trait Functor {
     type Inner;
     type This<A>: Functor<Inner = A>;
     fn fmap<B>(self, f: impl Fn(Self::Inner) -> B) -> Self::This<B>;
@@ -23,7 +19,7 @@ impl<T> Functor for Id<T> {
 
 pub trait Applicative {
     type Inner;
-    type This<A>: Applicative;
+    type This<A>: Applicative<Inner = A>;
     fn pure(inner: Self::Inner) -> Self;
     fn ap<B, F>(self, f: Self::This<F>) -> Self::This<B>
     where
