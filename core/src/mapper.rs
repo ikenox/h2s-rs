@@ -2,31 +2,22 @@ use crate::{Error, FromHtml, HtmlNode};
 
 pub struct Id<T>(pub T);
 
-pub trait FunctorBase {
+pub trait IsSelf {}
+
+impl<F> IsSelf for F where F: Functor<This<<Self as Functor>::Inner> = Self> {}
+
+pub trait Functor: IsSelf {
     type Inner;
-    type This<A>: Functor<Inner2 = Self::Inner>;
-    fn fmap<B>(this: Self::This<Self::Inner>, f: impl Fn(Self::Inner) -> B) -> Self::This<B>;
+    type This<A>: Functor;
+    fn fmap<B>(self, f: impl Fn(Self::Inner) -> B) -> Self::This<B>;
 }
 
-pub trait Functor: FunctorBase<This<Self::Inner2> = Self> {
-    type Inner2;
-    fn fmap<B>(self, f: impl Fn(Self::Inner2) -> B) -> Self::This<B>;
-}
-
-impl<F: FunctorBase<This<Self::Inner> = Self>> Functor for F {
-    type Inner2 = Self::Inner;
-
-    fn fmap<B>(self, f: impl Fn(Self::Inner2) -> B) -> Self::This<B> {
-        F::fmap(self, f)
-    }
-}
-
-impl<T> FunctorBase for Id<T> {
+impl<T> Functor for Id<T> {
     type Inner = T;
     type This<A> = Id<A>;
 
-    fn fmap<B>(this: Self::This<T>, f: impl Fn(T) -> B) -> Self::This<B> {
-        Id(f(this.0))
+    fn fmap<B>(self, f: impl Fn(Self::Inner) -> B) -> Self::This<B> {
+        Id(f(self.0))
     }
 }
 
