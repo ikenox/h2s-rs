@@ -1,6 +1,6 @@
 use crate::{Error, FromHtml, HtmlNode};
 
-pub struct Id<T>(pub T);
+pub struct Identity<T>(pub T);
 
 pub trait Functor {
     type Inner;
@@ -8,35 +8,48 @@ pub trait Functor {
     fn fmap<B>(self, f: impl Fn(Self::Inner) -> B) -> Self::This<B>;
 }
 
-impl<T> Functor for Id<T> {
+pub trait Applicative {
+    type Inner2;
+    type This<A>: Applicative<Inner2 = A>;
+    fn pure(inner: Self::Inner2) -> Self;
+    fn ap<B, F>(self, f: Self::This<F>) -> Self::This<B>
+    where
+        F: Fn(Self::Inner2) -> B;
+}
+
+pub trait Monad {
+    type Inner3;
+    type This<A>: Monad<Inner3 = A>;
+    fn bind<B: Monad, F>(self, f: F) -> Self::This<B>
+    where
+        F: Fn(Self::Inner3) -> Self::This<B>;
+}
+
+impl<T> Functor for Identity<T> {
     type Inner = T;
-    type This<A> = Id<A>;
+    type This<A> = Identity<A>;
 
     fn fmap<B>(self, f: impl Fn(Self::Inner) -> B) -> Self::This<B> {
-        Id(f(self.0))
+        Identity(f(self.0))
     }
 }
 
-pub trait Applicative {
-    type Inner;
-    type This<A>: Applicative<Inner = A>;
-    fn pure(inner: Self::Inner) -> Self;
-    fn ap<B, F>(self, f: Self::This<F>) -> Self::This<B>
-    where
-        F: Fn(Self::Inner) -> B;
+impl<T> Functor for Option<T> {
+    type Inner = T;
+    type This<A> = Option<A>;
+
+    fn fmap<B>(self, f: impl Fn(Self::Inner) -> B) -> Self::This<B> {
+        self.map(f)
+    }
 }
 
 impl<T, E> Applicative for Result<T, E> {
-    type Inner = T;
+    type Inner2 = T;
     type This<A> = Result<A, E>;
-
-    fn pure(inner: Self::Inner) -> Self {
-        Ok(inner)
-    }
 
     fn ap<B, F>(self, f: Self::This<F>) -> Self::This<B>
     where
-        F: Fn(Self::Inner) -> B,
+        F: Fn(Self::Inner2) -> B,
     {
         self.and_then(|t| f.map(|f| f(t)))
     }
@@ -44,7 +57,12 @@ impl<T, E> Applicative for Result<T, E> {
 
 pub trait Foldable {}
 
-pub trait Traversable: Functor + Foldable {}
+pub trait Traversable: Functor + Foldable {
+    fn traverse<A, F>(self, f: F) -> A::This<Self::This<A::Inner2>>
+    where
+        A: Applicative,
+        F: Fn(Self::Inner) -> A;
+}
 
 /// `Mapper` maps `F<N: HtmlNode>` -> `Result<F<T: FromHtml>>`
 pub trait Mapper<T>: Sized {
