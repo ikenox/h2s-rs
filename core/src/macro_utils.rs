@@ -30,9 +30,9 @@ where
     N: HtmlNode,
     T: FromHtml,
     F: Traversable<Inner = T>,
-    S: Transformer<F::This1<N>>,
+    S: Transformer<F::This<N>>,
 {
-    let a: F::This1<N> = source.try_transform().unwrap();
+    let a: F::This<N> = source.try_transform().unwrap();
     let b = a.fmap(|n| T::from_html(&n, args));
     Err(Box::new(VecToArrayError::ElementNumberUnmatched {
         expected: 0,
