@@ -30,17 +30,13 @@ pub fn try_transform_and_map2<N, T, F, S>(
 where
     N: HtmlNode,
     T: FromHtml,
-    F: Traversable<Inner = T>,
+    F: Functor<Inner = T>,
     S: Transformer<F::This<N>>,
     F::This<N>: Traversable, // TODO remove this constraint
 {
     let a: F::This<N> = source.try_transform().unwrap();
-    a.traverse(|n| T::from_html(&n, args));
-    // let b = a.fmap(|n| T::from_html(&n, args));
-    Err(Box::new(VecToArrayError::ElementNumberUnmatched {
-        expected: 0,
-        found: 0,
-    }))
+    let b: Result<F, _> = a.traverse(|n| T::from_html(&n, args));
+    Ok(b.unwrap())
 }
 
 pub fn try_transform_and_map<N, T, M, S>(
