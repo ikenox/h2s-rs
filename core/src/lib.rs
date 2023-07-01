@@ -4,6 +4,7 @@ pub mod display;
 mod error;
 pub mod from_html;
 pub mod from_text;
+pub mod functional;
 pub mod macro_utils;
 pub mod mapper;
 pub mod text_extractor;

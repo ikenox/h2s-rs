@@ -3,7 +3,8 @@
 //! You wouldn't call these methods directly in your code.
 
 use crate::from_html::{ExtractionType, StructErrorCause, StructFieldError};
-use crate::mapper::{Functor, Mapper, Traversable};
+use crate::functional::{Functor, Traversable};
+use crate::mapper::Mapper;
 use crate::transformer::{Transformer, VecToArrayError};
 use crate::Error;
 use crate::{CssSelector, FromHtml, HtmlNode};
@@ -31,9 +32,11 @@ where
     T: FromHtml,
     F: Traversable<Inner = T>,
     S: Transformer<F::This<N>>,
+    F::This<N>: Traversable,
 {
     let a: F::This<N> = source.try_transform().unwrap();
-    let b = a.fmap(|n| T::from_html(&n, args));
+    a.traverse(|a| Some(a));
+    // let b = a.fmap(|n| T::from_html(&n, args));
     Err(Box::new(VecToArrayError::ElementNumberUnmatched {
         expected: 0,
         found: 0,
