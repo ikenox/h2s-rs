@@ -32,10 +32,10 @@ where
     T: FromHtml,
     F: Traversable<Inner = T>,
     S: Transformer<F::This<N>>,
-    F::This<N>: Traversable,
+    F::This<N>: Traversable, // TODO remove this constraint
 {
     let a: F::This<N> = source.try_transform().unwrap();
-    a.traverse(|a| Some(a));
+    a.traverse(|n| T::from_html(&n, args));
     // let b = a.fmap(|n| T::from_html(&n, args));
     Err(Box::new(VecToArrayError::ElementNumberUnmatched {
         expected: 0,

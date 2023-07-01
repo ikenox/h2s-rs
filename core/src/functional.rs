@@ -1,10 +1,10 @@
 pub struct Identity<T>(pub T);
 
-pub trait IsSelf {}
+pub trait ThisConstraint {}
 
-impl<F> IsSelf for F where F: Functor<This<<Self as Functor>::Inner> = Self> {}
+impl<F> ThisConstraint for F where F: Functor<This<<Self as Functor>::Inner> = Self> {}
 
-pub trait Functor: IsSelf {
+pub trait Functor: ThisConstraint + Sized {
     type Inner;
     type This<A>: Functor<Inner = A>;
     fn fmap<B, F>(self, f: F) -> Self::This<B>
@@ -169,11 +169,19 @@ where
     }
 }
 
-pub trait Foldable {}
-
-pub trait Traversable: Functor + Foldable {
+pub trait Traversable: Functor {
     fn traverse<A, F>(self, f: F) -> A::This<Self::This<A::Inner>>
     where
         A: Applicative,
         F: Fn(Self::Inner) -> A;
+}
+
+impl<T> Traversable for Vec<T> {
+    fn traverse<A, F>(self, f: F) -> A::This<Self::This<A::Inner>>
+    where
+        A: Applicative,
+        F: Fn(Self::Inner) -> A,
+    {
+        todo!()
+    }
 }
