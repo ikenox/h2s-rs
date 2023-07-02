@@ -35,7 +35,7 @@ where
     F::This<N>: Traversable<This<T> = F>, // TODO remove this constraint
 {
     let a: F::This<N> = source.try_transform().unwrap();
-    let b: Result<_, _> = a.traverse(|n| T::from_html(&n, args));
+    let b: Result<F, _> = a.traverse(|n| T::from_html(&n, args));
     Ok(b.unwrap())
 }
 
