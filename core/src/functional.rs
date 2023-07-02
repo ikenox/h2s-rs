@@ -1,3 +1,5 @@
+use crate::FromHtml;
+
 pub struct Identity<T>(pub T);
 
 pub trait ThisConstraint {}
@@ -139,6 +141,18 @@ impl<T> Functor for Vec<T> {
     }
 }
 
+impl<T, const N: usize> Functor for [T; N] {
+    type Inner = T;
+    type This<A> = [A; N];
+
+    fn fmap<B, F>(self, f: F) -> Self::This<B>
+    where
+        F: Fn(Self::Inner) -> B,
+    {
+        self.map(f)
+    }
+}
+
 impl<T> Applicative for Vec<T>
 where
     T: Clone,
@@ -184,4 +198,46 @@ impl<T> Traversable for Vec<T> {
     {
         todo!()
     }
+}
+
+pub trait FieldValue {
+    type Type: FromHtml;
+    type Wrapped: Functor<Inner = Self::Type>;
+
+    fn unwrap(wrapped: Self::Wrapped) -> Self;
+}
+
+impl<T: FromHtml> FieldValue for T {
+    type Type = T;
+    // todo note why use identity
+    type Wrapped = Identity<T>;
+    fn unwrap(wrapped: Self::Wrapped) -> Self {
+        wrapped.0
+    }
+}
+impl<T: FromHtml> FieldValue for Vec<T> {
+    type Type = T;
+    type Wrapped = Self;
+    fn unwrap(wrapped: Self::Wrapped) -> Self {
+        wrapped
+    }
+}
+impl<T: FromHtml> FieldValue for Option<T> {
+    type Type = T;
+    type Wrapped = Self;
+    fn unwrap(wrapped: Self::Wrapped) -> Self {
+        wrapped
+    }
+}
+impl<T: FromHtml, const N: usize> FieldValue for [T; N] {
+    type Type = T;
+    type Wrapped = Self;
+    fn unwrap(wrapped: Self::Wrapped) -> Self {
+        wrapped
+    }
+}
+
+pub trait WrappedFieldValue: Functor {
+    type Unwrapped: FieldValue;
+    fn unwrap(self) -> Self::Unwrapped;
 }
