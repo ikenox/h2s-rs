@@ -79,7 +79,7 @@ impl<T, E> Functor for Result<T, E> {
     where
         F: Fn(Self::Inner) -> B,
     {
-        self.bind(|a| <Self::This<B>>::pure(f(a)))
+        self.map(f)
     }
 }
 
@@ -170,6 +170,7 @@ impl<T: FromHtml> FieldValue for T {
         wrapped.0
     }
 }
+
 impl<T: FromHtml> FieldValue for Vec<T> {
     type Type = T;
     type Wrapped = Self;
@@ -177,6 +178,7 @@ impl<T: FromHtml> FieldValue for Vec<T> {
         wrapped
     }
 }
+
 impl<T: FromHtml> FieldValue for Option<T> {
     type Type = T;
     type Wrapped = Self;
@@ -184,6 +186,7 @@ impl<T: FromHtml> FieldValue for Option<T> {
         wrapped
     }
 }
+
 impl<T: FromHtml, const N: usize> FieldValue for [T; N] {
     type Type = T;
     type Wrapped = Self;

@@ -3,9 +3,9 @@
 //! You wouldn't call these methods directly in your code.
 
 use crate::from_html::{ExtractionType, StructErrorCause, StructFieldError};
-use crate::functional::{FieldValue, Functor, Traversable, WrappedFieldValue};
+use crate::functional::{FieldValue, Functor, Traversable};
 use crate::mapper::Mapper;
-use crate::transformer::{Transformer, VecToArrayError};
+use crate::transformer::Transformable;
 use crate::Error;
 use crate::{CssSelector, FromHtml, HtmlNode};
 
@@ -30,7 +30,7 @@ pub fn try_transform_and_map2<N, F, S>(
 where
     N: HtmlNode,
     F: FieldValue,
-    S: Transformer<<F::Wrapped as Functor>::This<N>>,
+    S: Transformable<<F::Wrapped as Functor>::This<N>>,
     // TODO remove this constraint
     <F::Wrapped as Functor>::This<N>: Traversable<This<F::Type> = F::Wrapped>,
 {
@@ -64,7 +64,7 @@ where
     N: HtmlNode,
     T: FromHtml,
     M: Mapper<T>,
-    S: Transformer<M::Structure<N>>,
+    S: Transformable<M::Structure<N>>,
 {
     source
         .try_transform()

@@ -102,9 +102,9 @@ impl H2sFieldReceiver {
                     )
                     .to_compile_error();
                 }
-                quote!(::h2s::macro_utils::select::<N>(source,#selector))
+                quote!(::h2s::macro_utils::select::<N>(source, #selector))
             }
-            None => quote!(::std::vec![source.clone()]),
+            None => quote!(source),
         };
 
         // FIXME user‐unfriendly error message is shown when argument is mismatched
