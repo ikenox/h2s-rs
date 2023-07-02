@@ -34,9 +34,23 @@ where
     S: Transformer<F::This<N>>,
     F::This<N>: Traversable<This<T> = F>, // TODO remove this constraint
 {
-    let a: F::This<N> = source.try_transform().unwrap();
-    let b: Result<F, _> = a.traverse(|n| T::from_html(&n, args));
-    Ok(b.unwrap())
+    let wraperr = |e| {
+        Box::new(StructFieldError {
+            field_name: field_name.to_string(),
+            selector: selector.map(|a| a.to_string()),
+            error: e,
+        }) as Box<dyn Error>
+    };
+
+    let transformed: F::This<N> = source
+        .try_transform()
+        .map_err(StructErrorCause::StructureUnmatched)
+        .map_err(wraperr)?;
+    let parsed: F = transformed
+        .traverse(|n| T::from_html(&n, args))
+        .map_err(StructErrorCause::ParseError)
+        .map_err(wraperr)?;
+    Ok(parsed)
 }
 
 pub fn try_transform_and_map<N, T, M, S>(
