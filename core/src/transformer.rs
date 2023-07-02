@@ -1,3 +1,4 @@
+use crate::functional::Identity;
 use crate::Error;
 use crate::Never;
 
@@ -7,14 +8,14 @@ pub trait Transformable<T> {
     fn try_transform(self) -> Result<T, Self::Error>;
 }
 
-impl<N> Transformable<N> for Vec<N> {
+impl<N> Transformable<Identity<N>> for Vec<N> {
     type Error = VecToSingleError;
 
-    fn try_transform(mut self) -> Result<N, Self::Error> {
+    fn try_transform(mut self) -> Result<Identity<N>, Self::Error> {
         if self.len() > 1 {
             Err(VecToSingleError::TooManyElements { found: self.len() })
         } else {
-            self.pop().ok_or(VecToSingleError::NoElements)
+            self.pop().map(Identity).ok_or(VecToSingleError::NoElements)
         }
     }
 }
@@ -50,6 +51,14 @@ impl<T> Transformable<T> for T {
     }
 }
 
+impl<T> Transformable<Identity<T>> for T {
+    type Error = Never;
+
+    fn try_transform(self) -> Result<Identity<T>, Self::Error> {
+        Ok(Identity(self))
+    }
+}
+
 impl<N> Transformable<Option<N>> for Vec<N> {
     type Error = VecToOptionError;
 
@@ -69,18 +78,22 @@ pub enum VecToOptionError {
 
 #[cfg(test)]
 mod test {
+    use crate::functional::Identity;
     use crate::transformer::Transformable;
     use crate::transformer::{VecToArrayError, VecToOptionError, VecToSingleError};
 
     #[test]
     fn vec_to_single() {
-        assert_eq!(vec![0].try_transform() as Result<i32, _>, Ok(0));
         assert_eq!(
-            vec![].try_transform() as Result<i32, _>,
+            vec![0].try_transform() as Result<Identity<i32>, _>,
+            Ok(Identity(0))
+        );
+        assert_eq!(
+            vec![].try_transform() as Result<Identity<i32>, _>,
             Err(VecToSingleError::NoElements),
         );
         assert_eq!(
-            vec![0, 1].try_transform() as Result<i32, _>,
+            vec![0, 1].try_transform() as Result<Identity<i32>, _>,
             Err(VecToSingleError::TooManyElements { found: 2 }),
         );
     }

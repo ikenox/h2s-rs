@@ -1,5 +1,6 @@
 use crate::FromHtml;
 
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Identity<T>(pub T);
 
 pub trait ThisConstraint {}

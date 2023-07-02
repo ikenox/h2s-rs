@@ -104,7 +104,7 @@ impl H2sFieldReceiver {
                 }
                 quote!(::h2s::macro_utils::select::<N>(source, #selector))
             }
-            None => quote!(source),
+            None => quote!(source.clone()),
         };
 
         // FIXME user‐unfriendly error message is shown when argument is mismatched
@@ -123,6 +123,6 @@ impl H2sFieldReceiver {
             .map(|a| quote!(::std::option::Option::Some(#a)))
             .unwrap_or_else(|| quote!(::std::option::Option::None));
 
-        quote!(::h2s::macro_utils::try_transform_and_map2::<N,_,_,_>(#source, #args, #selector, #field_name)?)
+        quote!(::h2s::macro_utils::try_transform_and_map2::<N,_,_>(#source, #args, #selector, #field_name)?)
     }
 }
