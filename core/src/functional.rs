@@ -21,12 +21,6 @@ pub trait Applicative: Functor {
         F: Fn(Self::Inner) -> B;
 }
 
-pub trait Monad: Applicative {
-    fn bind<B, F>(self, f: F) -> Self::This<B>
-    where
-        F: Fn(Self::Inner) -> Self::This<B>;
-}
-
 impl<T> Functor for Identity<T> {
     type Inner = T;
     type This<A> = Identity<A>;
@@ -49,15 +43,6 @@ impl<T> Applicative for Identity<T> {
         F: Fn(Self::Inner) -> B,
     {
         todo!()
-    }
-}
-
-impl<T> Monad for Identity<T> {
-    fn bind<B, F>(self, f: F) -> Self::This<B>
-    where
-        F: Fn(Self::Inner) -> Self::This<B>,
-    {
-        f(self.0)
     }
 }
 
@@ -86,15 +71,6 @@ impl<T> Applicative for Option<T> {
     }
 }
 
-impl<T> Monad for Option<T> {
-    fn bind<B, F>(self, f: F) -> Self::This<B>
-    where
-        F: Fn(Self::Inner) -> Self::This<B>,
-    {
-        self.and_then(f)
-    }
-}
-
 impl<T, E> Functor for Result<T, E> {
     type Inner = T;
     type This<A> = Result<A, E>;
@@ -117,15 +93,6 @@ impl<T, E> Applicative for Result<T, E> {
         F: Fn(Self::Inner) -> B,
     {
         self.and_then(|a| f.map(|f| f(a)))
-    }
-}
-
-impl<T, E> Monad for Result<T, E> {
-    fn bind<B, F>(self, f: F) -> Self::This<B>
-    where
-        F: FnOnce(Self::Inner) -> Self::This<B>,
-    {
-        self.and_then(f)
     }
 }
 
@@ -168,18 +135,6 @@ where
         self.into_iter()
             .flat_map(|a| f.iter().map(move |f| f(a.clone())))
             .collect()
-    }
-}
-
-impl<T> Monad for Vec<T>
-where
-    T: Clone,
-{
-    fn bind<B, F>(self, f: F) -> Self::This<B>
-    where
-        F: Fn(Self::Inner) -> Self::This<B>,
-    {
-        self.into_iter().flat_map(f).collect()
     }
 }
 
@@ -235,9 +190,4 @@ impl<T: FromHtml, const N: usize> FieldValue for [T; N] {
     fn unwrap(wrapped: Self::Wrapped) -> Self {
         wrapped
     }
-}
-
-pub trait WrappedFieldValue: Functor {
-    type Unwrapped: FieldValue;
-    fn unwrap(self) -> Self::Unwrapped;
 }
