@@ -50,6 +50,7 @@ where
         .traverse(|n| F::Type::from_html(&n, args))
         .map_err(StructErrorCause::ParseError)
         .map_err(wraperr)?;
+
     Ok(F::unwrap(parsed))
 }
 
