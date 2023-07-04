@@ -36,7 +36,9 @@ where
     source
         .try_transform()
         .map_err(StructErrorCause::StructureUnmatched)
-        .and_then(|s| M::try_map(s, args).map_err(StructErrorCause::ParseError))
+        .and_then(|s| {
+            M::try_map(s, |n| T::from_html(&n, args)).map_err(StructErrorCause::ParseError)
+        })
         .map_err(|e| StructFieldError {
             field_name: field_name.to_string(),
             selector: selector.map(|a| a.to_string()),
