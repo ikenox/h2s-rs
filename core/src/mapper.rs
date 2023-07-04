@@ -73,13 +73,9 @@ pub mod impls {
                     T::from_html(n, args).map_err(|e| ListElementError { index: i, error: e })
                 })
                 // unwrapping results
-                .fold(Ok(vec![]), |acc, res| {
-                    acc.and_then(|mut list| {
-                        res.map(|val| {
-                            list.push(val);
-                            list
-                        })
-                    })
+                .try_fold(vec![], |mut acc, res| {
+                    acc.push(res?);
+                    Ok(acc)
                 })
         }
     }
@@ -102,13 +98,9 @@ pub mod impls {
                 .map(|(i, n)| {
                     T::from_html(n, args).map_err(|e| ListElementError { index: i, error: e })
                 })
-                .fold(Ok(vec![]), |acc, res| {
-                    acc.and_then(|mut list| {
-                        res.map(|val| {
-                            list.push(val);
-                            list
-                        })
-                    })
+                .try_fold(vec![], |mut acc, res| {
+                    acc.push(res?);
+                    Ok(acc)
                 })?;
 
             // this conversion should never fail
