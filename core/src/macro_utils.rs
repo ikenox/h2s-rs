@@ -1,6 +1,6 @@
 //! A set of internal utility methods that will be used in the auto-generated code on `FromHtml` derive macro.
-//! These methods are shorthands to reduce codes in the `quote!` macro. It improves development experience with IDE.
-//! You wouldn't call these methods directly in your code.
+//! These methods are shorthands to reduce codes in the `quote!` macro and improve development experience.
+//! If you are just a h2s user, you wouldn't call these methods directly.
 
 use crate::from_html::{ExtractionType, StructErrorCause, StructFieldError};
 use crate::mapper::FieldValue;
