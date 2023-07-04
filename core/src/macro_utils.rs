@@ -3,7 +3,7 @@
 //! You wouldn't call these methods directly in your code.
 
 use crate::from_html::{ExtractionType, StructErrorCause, StructFieldError};
-use crate::mapper::Mapper;
+use crate::mapper::FieldValue;
 use crate::transformer::Transformer;
 
 use crate::Error;
@@ -21,23 +21,23 @@ where
     source.select(&selector)
 }
 
-pub fn try_transform_and_map<N, T, M, S>(
+pub fn try_transform_and_map<N, F, S>(
     source: S,
-    args: &T::Args,
+    args: &<F::Inner as FromHtml>::Args,
     selector: Option<&'static str>,
     field_name: &'static str,
-) -> Result<M, Box<dyn Error>>
+) -> Result<F, Box<dyn Error>>
 where
     N: HtmlNode,
-    T: FromHtml,
-    M: Mapper<T>,
-    S: Transformer<M::Structure<N>>,
+    F: FieldValue,
+    S: Transformer<F::Structure<N>>,
 {
     source
         .try_transform()
         .map_err(StructErrorCause::StructureUnmatched)
         .and_then(|s| {
-            M::try_map(s, |n| T::from_html(&n, args)).map_err(StructErrorCause::ParseError)
+            F::try_map(s, |n| <F::Inner as FromHtml>::from_html(&n, args))
+                .map_err(StructErrorCause::ParseError)
         })
         .map_err(|e| StructFieldError {
             field_name: field_name.to_string(),

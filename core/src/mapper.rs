@@ -1,55 +1,66 @@
 use crate::{Error, FromHtml};
 
-/// `Mapper` maps `F<N: HtmlNode>` -> `Result<F<T: FromHtml>>`
-pub trait Mapper<T>: Sized {
+pub trait FieldValue: Sized {
+    type Inner: FromHtml;
     type Structure<U>;
     type Error<E: Error>: Error;
 
+    /// This method converts from `Structure<A>` to `Result<Structure<T>>`
+    /// It works like a `traverse` of functional programming language
     fn try_map<A, E, F>(source: Self::Structure<A>, f: F) -> Result<Self, Self::Error<E>>
     where
-        F: Fn(A) -> Result<T, E>,
+        F: Fn(A) -> Result<Self::Inner, E>,
         E: Error;
 }
 
 pub mod impls {
     use super::*;
 
-    impl<T> Mapper<T> for T
+    impl<T> FieldValue for T
     where
         T: FromHtml,
     {
+        type Inner = T;
         type Structure<U> = U;
         type Error<E: Error> = E;
 
         fn try_map<A, E, F>(source: Self::Structure<A>, f: F) -> Result<Self, Self::Error<E>>
         where
-            F: Fn(A) -> Result<T, E>,
+            F: Fn(A) -> Result<Self::Inner, E>,
             E: Error,
         {
             f(source)
         }
     }
 
-    impl<T> Mapper<T> for Option<T> {
+    impl<T> FieldValue for Option<T>
+    where
+        T: FromHtml,
+    {
+        type Inner = T;
         type Structure<U> = Option<U>;
         type Error<E: Error> = E;
 
         fn try_map<A, E, F>(source: Self::Structure<A>, f: F) -> Result<Self, Self::Error<E>>
         where
-            F: Fn(A) -> Result<T, E>,
+            F: Fn(A) -> Result<Self::Inner, E>,
             E: Error,
         {
             source.map(f).map_or(Ok(None), |v| v.map(Some))
         }
     }
 
-    impl<T> Mapper<T> for Vec<T> {
+    impl<T> FieldValue for Vec<T>
+    where
+        T: FromHtml,
+    {
+        type Inner = T;
         type Structure<U> = Vec<U>;
         type Error<E: Error> = ListElementError<E>;
 
         fn try_map<A, E, F>(source: Self::Structure<A>, f: F) -> Result<Self, Self::Error<E>>
         where
-            F: Fn(A) -> Result<T, E>,
+            F: Fn(A) -> Result<Self::Inner, E>,
             E: Error,
         {
             source
@@ -64,13 +75,17 @@ pub mod impls {
         }
     }
 
-    impl<T, const M: usize> Mapper<T> for [T; M] {
+    impl<T, const M: usize> FieldValue for [T; M]
+    where
+        T: FromHtml,
+    {
+        type Inner = T;
         type Structure<U> = [U; M];
         type Error<E: Error> = ListElementError<E>;
 
         fn try_map<A, E, F>(source: Self::Structure<A>, f: F) -> Result<Self, Self::Error<E>>
         where
-            F: Fn(A) -> Result<T, E>,
+            F: Fn(A) -> Result<Self::Inner, E>,
             E: Error,
         {
             let v = source
@@ -99,6 +114,7 @@ pub mod impls {
 mod test {
     use super::*;
     use crate::mapper::impls::ListElementError;
+    use crate::HtmlNode;
     use std::fmt::{Display, Formatter};
 
     #[derive(Debug, Clone, Eq, PartialEq)]
@@ -110,17 +126,28 @@ mod test {
         }
     }
     impl std::error::Error for ErrorImpl {}
+    impl FromHtml for &str {
+        type Args = ();
+        type Error = ErrorImpl;
+
+        fn from_html<N>(source: &N, args: &Self::Args) -> Result<Self, Self::Error>
+        where
+            N: HtmlNode,
+        {
+            todo!()
+        }
+    }
 
     #[test]
     fn vec() {
         assert_eq!(
-            Mapper::try_map(vec!["a", "b"], try_map_func),
+            FieldValue::try_map(vec!["a", "b"], try_map_func),
             Ok(vec!["a", "b"]),
             "the method is applied for each items of the vec"
         );
 
         assert_eq!(
-            Mapper::try_map(vec!["a", "!b", "!c"], try_map_func) as Result<Vec<_>, _>,
+            FieldValue::try_map(vec!["a", "!b", "!c"], try_map_func) as Result<Vec<_>, _>,
             Err(ListElementError {
                 index: 1,
                 error: ErrorImpl("!b")
@@ -132,13 +159,13 @@ mod test {
     #[test]
     fn array() {
         assert_eq!(
-            Mapper::try_map(["a", "b"], try_map_func),
+            FieldValue::try_map(["a", "b"], try_map_func),
             Ok(["a", "b"]),
             "the method is applied for each items of the array"
         );
 
         assert_eq!(
-            Mapper::try_map(["a", "!b", "!c"], try_map_func) as Result<[_; 3], _>,
+            FieldValue::try_map(["a", "!b", "!c"], try_map_func) as Result<[_; 3], _>,
             Err(ListElementError {
                 index: 1,
                 error: ErrorImpl("!b")
@@ -150,19 +177,19 @@ mod test {
     #[test]
     fn option() {
         assert_eq!(
-            Mapper::try_map(Some("ok"), try_map_func),
+            FieldValue::try_map(Some("ok"), try_map_func),
             Ok(Some("ok")),
             "the method is applied for is present"
         );
 
         assert_eq!(
-            Mapper::try_map(None, try_map_func),
+            FieldValue::try_map(None, try_map_func),
             Ok(None),
             "returned none if none"
         );
 
         assert_eq!(
-            Mapper::try_map(Some("!err"), try_map_func) as Result<Option<_>, _>,
+            FieldValue::try_map(Some("!err"), try_map_func) as Result<Option<_>, _>,
             Err(ErrorImpl("!err")),
             "returned error if failed to apply"
         );
