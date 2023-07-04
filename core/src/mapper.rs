@@ -1,17 +1,14 @@
-use crate::{Error, FromHtml, HtmlNode};
+use crate::{Error, FromHtml};
 
 /// `Mapper` maps `F<N: HtmlNode>` -> `Result<F<T: FromHtml>>`
 pub trait Mapper<T>: Sized {
     type Structure<U>;
     type Error<E: Error>: Error;
 
-    // TODO separate process of folding the error
-    fn try_map<N: HtmlNode>(
-        source: Self::Structure<N>,
-        args: &T::Args,
-    ) -> Result<Self, Self::Error<T::Error>>
+    fn try_map<A, E, F>(source: Self::Structure<A>, f: F) -> Result<Self, Self::Error<E>>
     where
-        T: FromHtml;
+        F: Fn(A) -> Result<T, E>,
+        E: Error;
 }
 
 pub mod impls {
@@ -24,14 +21,12 @@ pub mod impls {
         type Structure<U> = U;
         type Error<E: Error> = E;
 
-        fn try_map<N: HtmlNode>(
-            source: Self::Structure<N>,
-            args: &T::Args,
-        ) -> Result<Self, Self::Error<T::Error>>
+        fn try_map<A, E, F>(source: Self::Structure<A>, f: F) -> Result<Self, Self::Error<E>>
         where
-            T: FromHtml,
+            F: Fn(A) -> Result<T, E>,
+            E: Error,
         {
-            T::from_html(&source, args)
+            f(source)
         }
     }
 
@@ -39,18 +34,12 @@ pub mod impls {
         type Structure<U> = Option<U>;
         type Error<E: Error> = E;
 
-        fn try_map<N>(
-            source: Self::Structure<N>,
-            args: &T::Args,
-        ) -> Result<Self, Self::Error<T::Error>>
+        fn try_map<A, E, F>(source: Self::Structure<A>, f: F) -> Result<Self, Self::Error<E>>
         where
-            T: FromHtml,
-            N: HtmlNode,
+            F: Fn(A) -> Result<T, E>,
+            E: Error,
         {
-            source
-                .as_ref()
-                .map(|n| T::from_html(n, args))
-                .map_or(Ok(None), |v| v.map(Some))
+            source.map(f).map_or(Ok(None), |v| v.map(Some))
         }
     }
 
@@ -58,20 +47,15 @@ pub mod impls {
         type Structure<U> = Vec<U>;
         type Error<E: Error> = ListElementError<E>;
 
-        fn try_map<N>(
-            source: Self::Structure<N>,
-            args: &T::Args,
-        ) -> Result<Self, Self::Error<T::Error>>
+        fn try_map<A, E, F>(source: Self::Structure<A>, f: F) -> Result<Self, Self::Error<E>>
         where
-            T: FromHtml,
-            N: HtmlNode,
+            F: Fn(A) -> Result<T, E>,
+            E: Error,
         {
             source
-                .iter()
+                .into_iter()
                 .enumerate()
-                .map(|(i, n)| {
-                    T::from_html(n, args).map_err(|e| ListElementError { index: i, error: e })
-                })
+                .map(|(i, n)| f(n).map_err(|e| ListElementError { index: i, error: e }))
                 // unwrapping results
                 .try_fold(vec![], |mut acc, res| {
                     acc.push(res?);
@@ -84,20 +68,15 @@ pub mod impls {
         type Structure<U> = [U; M];
         type Error<E: Error> = ListElementError<E>;
 
-        fn try_map<N>(
-            source: Self::Structure<N>,
-            args: &T::Args,
-        ) -> Result<Self, Self::Error<T::Error>>
+        fn try_map<A, E, F>(source: Self::Structure<A>, f: F) -> Result<Self, Self::Error<E>>
         where
-            T: FromHtml,
-            N: HtmlNode,
+            F: Fn(A) -> Result<T, E>,
+            E: Error,
         {
             let v = source
-                .iter()
+                .into_iter()
                 .enumerate()
-                .map(|(i, n)| {
-                    T::from_html(n, args).map_err(|e| ListElementError { index: i, error: e })
-                })
+                .map(|(i, n)| f(n).map_err(|e| ListElementError { index: i, error: e }))
                 .try_fold(vec![], |mut acc, res| {
                     acc.push(res?);
                     Ok(acc)
@@ -120,12 +99,10 @@ pub mod impls {
 mod test {
     use super::*;
     use crate::mapper::impls::ListElementError;
-    use crate::CssSelector;
-    use crate::Never;
     use std::fmt::{Display, Formatter};
 
     #[derive(Debug, Clone, Eq, PartialEq)]
-    pub struct ErrorImpl(String);
+    pub struct ErrorImpl(&'static str);
 
     impl Display for ErrorImpl {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -137,99 +114,65 @@ mod test {
     #[test]
     fn vec() {
         assert_eq!(
-            Vec::<FromHtmlImpl>::try_map(vec![MockElement("a"), MockElement("b")], &()),
-            Ok(vec![FromHtmlImpl::new("a"), FromHtmlImpl::new("b")]),
+            Mapper::try_map(vec!["a", "b"], try_map_func),
+            Ok(vec!["a", "b"]),
             "the method is applied for each items of the vec"
         );
 
         assert_eq!(
-            Vec::<FromHtmlImpl>::try_map(vec![MockElement("a"), MockElement("!b")], &()),
+            Mapper::try_map(vec!["a", "!b", "!c"], try_map_func) as Result<Vec<_>, _>,
             Err(ListElementError {
                 index: 1,
-                error: ErrorImpl("!b".to_string())
+                error: ErrorImpl("!b")
             }),
             "returned error if one of the vec items fails to apply"
         );
     }
 
     #[test]
+    fn array() {
+        assert_eq!(
+            Mapper::try_map(["a", "b"], try_map_func),
+            Ok(["a", "b"]),
+            "the method is applied for each items of the array"
+        );
+
+        assert_eq!(
+            Mapper::try_map(["a", "!b", "!c"], try_map_func) as Result<[_; 3], _>,
+            Err(ListElementError {
+                index: 1,
+                error: ErrorImpl("!b")
+            }),
+            "returned error if one of the array items fails to apply"
+        );
+    }
+
+    #[test]
     fn option() {
         assert_eq!(
-            Option::<FromHtmlImpl>::try_map::<MockElement>(Some(MockElement("ok!")), &()),
-            Ok(Some(FromHtmlImpl::new("ok!"))),
+            Mapper::try_map(Some("ok"), try_map_func),
+            Ok(Some("ok")),
             "the method is applied for is present"
         );
 
         assert_eq!(
-            Option::<FromHtmlImpl>::try_map::<MockElement>(None, &()),
+            Mapper::try_map(None, try_map_func),
             Ok(None),
             "returned none if none"
         );
 
         assert_eq!(
-            Option::<FromHtmlImpl>::try_map::<MockElement>(Some(MockElement("!err")), &()),
-            Err(ErrorImpl("!err".to_string())),
+            Mapper::try_map(Some("!err"), try_map_func) as Result<Option<_>, _>,
+            Err(ErrorImpl("!err")),
             "returned error if failed to apply"
         );
     }
 
-    #[derive(Debug, Eq, PartialEq, Clone)]
-    pub struct FromHtmlImpl(String);
-
-    impl FromHtmlImpl {
-        pub fn new<S: AsRef<str>>(s: S) -> Self {
-            Self(s.as_ref().to_string())
-        }
-    }
-
-    impl FromHtml for FromHtmlImpl {
-        type Args = ();
-        type Error = ErrorImpl;
-
-        fn from_html<N>(source: &N, _args: &Self::Args) -> Result<Self, Self::Error>
-        where
-            N: HtmlNode,
-        {
-            let text = source.text_contents();
-            if text.starts_with('!') {
-                Err(ErrorImpl(text))
-            } else {
-                Ok(FromHtmlImpl(text))
-            }
-        }
-    }
-
-    #[derive(Clone)]
-    pub struct MockElement(&'static str);
-    pub struct MockSelector;
-
-    impl CssSelector for MockSelector {
-        type Error = Never;
-
-        fn parse<S>(_s: S) -> Result<Self, Self::Error>
-        where
-            S: AsRef<str>,
-        {
-            unimplemented!()
-        }
-    }
-
-    impl HtmlNode for MockElement {
-        type Selector = MockSelector;
-
-        fn select(&self, _selector: &Self::Selector) -> Vec<Self> {
-            unimplemented!()
-        }
-
-        fn text_contents(&self) -> String {
-            self.0.to_string()
-        }
-
-        fn attribute<S>(&self, _attr: S) -> Option<&str>
-        where
-            S: AsRef<str>,
-        {
-            unimplemented!()
+    fn try_map_func(s: &'static str) -> Result<&str, ErrorImpl> {
+        if s.starts_with('!') {
+            Err(ErrorImpl(s))
+        } else {
+            Ok(s)
         }
     }
 }
