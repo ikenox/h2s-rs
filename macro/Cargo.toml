@@ -11,10 +11,10 @@ rust-version = { workspace = true }
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-quote = "1.0.18"
-syn = "1.0.92"
-darling = "0.14.1"
-proc-macro2 = "1.0.37"
+quote = "1.0.26"
+syn = "2.0.15"
+darling = "0.20.0"
+proc-macro2 = "1.0.56"
 scraper = { workspace = true } # TODO remove this dependency
 h2s_core = { path = "../core", version = "0.17.0" }
 
