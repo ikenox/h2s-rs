@@ -113,7 +113,9 @@ mod test {
             write!(f, "{}", &self.0)
         }
     }
+
     impl std::error::Error for ErrorImpl {}
+
     impl FromHtml for &str {
         type Args = ();
         type Error = ErrorImpl;
@@ -127,11 +129,26 @@ mod test {
     }
 
     #[test]
+    fn exactly_one() {
+        assert_eq!(
+            FieldValue::try_traverse_from("a", try_map_func),
+            Ok("a"),
+            "a map function is just applied"
+        );
+
+        assert_eq!(
+            FieldValue::try_traverse_from("!a", try_map_func) as Result<&str, _>,
+            Err(ErrorImpl("!a")),
+            "returned error if a map function fails"
+        );
+    }
+
+    #[test]
     fn vec() {
         assert_eq!(
             FieldValue::try_traverse_from(vec!["a", "b"], try_map_func),
             Ok(vec!["a", "b"]),
-            "the method is applied for each items of the vec"
+            "a map function is applied for each items of the vec"
         );
 
         assert_eq!(
@@ -149,7 +166,7 @@ mod test {
         assert_eq!(
             FieldValue::try_traverse_from(["a", "b"], try_map_func),
             Ok(["a", "b"]),
-            "the method is applied for each items of the array"
+            "a map function is applied for each items of the array"
         );
 
         assert_eq!(
@@ -167,7 +184,7 @@ mod test {
         assert_eq!(
             FieldValue::try_traverse_from(Some("ok"), try_map_func),
             Ok(Some("ok")),
-            "the method is applied for is present"
+            "a map function is applied for is present"
         );
 
         assert_eq!(
