@@ -29,7 +29,7 @@ scraper = "0.16.0"
 h2s_core = { path = "core", version = "0.17.0" }
 h2s_macro = { path = "macro", version = "0.17.0" }
 
-itertools = "0.10.3"
+itertools = "0.10.5"
 scraper = { workspace = true, optional = true }
 
 [features]
