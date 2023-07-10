@@ -2,7 +2,7 @@
 
 use std::fmt::Debug;
 
-pub mod display;
+mod display;
 mod error;
 pub mod field_value;
 pub mod from_html;
