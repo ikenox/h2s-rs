@@ -1,15 +1,15 @@
 //! A core part of h2s
 
+use std::fmt::Debug;
+
 pub mod display;
 mod error;
+pub mod field_value;
 pub mod from_html;
 pub mod from_text;
 pub mod macro_utils;
-pub mod mapper;
 pub mod text_extractor;
 pub mod transformer;
-
-use std::fmt::Debug;
 
 /// A converter from single HTML node to single struct
 pub trait FromHtml: Sized {
@@ -39,6 +39,20 @@ pub trait CssSelector: Sized {
     fn parse<S>(s: S) -> Result<Self, Self::Error>
     where
         S: AsRef<str>;
+}
+
+/// A field value of FromHtml-deriving struct
+pub trait FieldValue: Sized {
+    type Inner: FromHtml;
+    type Structure<U>;
+    type Error<E: Error>: Error;
+
+    /// This method converts from `Structure<A>` to `Result<Structure<T>>`
+    /// It works like a `traverse` of functional programming language
+    fn try_traverse_from<A, E, F>(source: Self::Structure<A>, f: F) -> Result<Self, Self::Error<E>>
+    where
+        F: Fn(A) -> Result<Self::Inner, E>,
+        E: Error;
 }
 
 /// Similar with std::convert::Infallible

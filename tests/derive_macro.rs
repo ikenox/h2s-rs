@@ -218,7 +218,7 @@ fn invalid_macro_attribute_combination() {
 #[test]
 #[ignore]
 fn macro_error_message() {
-    // TODO
+    // TODO add tests of compilation error message
 }
 
 fn s(s: &str) -> String {

@@ -3,8 +3,8 @@
 //! If you are just a h2s user, you wouldn't call these methods directly.
 
 use crate::from_html::{ExtractionType, StructErrorCause, StructFieldError};
-use crate::mapper::FieldValue;
 use crate::transformer::Transformer;
+use crate::FieldValue;
 
 use crate::Error;
 use crate::{CssSelector, FromHtml, HtmlNode};
@@ -36,7 +36,7 @@ where
         .try_transform()
         .map_err(StructErrorCause::StructureUnmatched)
         .and_then(|s| {
-            F::try_map(s, |n| <F::Inner as FromHtml>::from_html(&n, args))
+            F::try_traverse_from(s, |n| <F::Inner as FromHtml>::from_html(&n, args))
                 .map_err(StructErrorCause::ParseError)
         })
         .map_err(|e| StructFieldError {
