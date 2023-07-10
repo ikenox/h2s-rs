@@ -1,10 +1,10 @@
 //! A set of internal utility methods that will be used in the auto-generated code on `FromHtml` derive macro.
-//! These methods are shorthands to reduce codes in the `quote!` macro. It improves development experience with IDE.
-//! You wouldn't call these methods directly in your code.
+//! These methods are shorthands to reduce codes in the `quote!` macro and improve development experience.
+//! If you are just a h2s user, you wouldn't call these methods directly.
 
 use crate::from_html::{ExtractionType, StructErrorCause, StructFieldError};
-use crate::mapper::Mapper;
 use crate::transformer::Transformer;
+use crate::FieldValue;
 
 use crate::Error;
 use crate::{CssSelector, FromHtml, HtmlNode};
@@ -21,23 +21,23 @@ where
     source.select(&selector)
 }
 
-pub fn try_transform_and_map<N, T, M, S>(
+pub fn try_transform_and_map<N, F, S>(
     source: S,
-    args: &T::Args,
+    args: &<F::Inner as FromHtml>::Args,
     selector: Option<&'static str>,
     field_name: &'static str,
-) -> Result<M, Box<dyn Error>>
+) -> Result<F, Box<dyn Error>>
 where
     N: HtmlNode,
-    T: FromHtml,
-    M: Mapper<T>,
-    S: Transformer<M::Structure<N>>,
+    F: FieldValue,
+    S: Transformer<F::Structure<N>>,
 {
     source
         .try_transform()
         .map_err(StructErrorCause::StructureUnmatched)
         .and_then(|s| {
-            M::try_map(s, |n| T::from_html(&n, args)).map_err(StructErrorCause::ParseError)
+            F::try_traverse_from(s, |n| <F::Inner as FromHtml>::from_html(&n, args))
+                .map_err(StructErrorCause::ParseError)
         })
         .map_err(|e| StructFieldError {
             field_name: field_name.to_string(),

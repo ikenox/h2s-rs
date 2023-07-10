@@ -1,13 +1,14 @@
 //! All implementations of Display trait.
 //! Defining human-readable string is a different context from HTML-parsing process, so we are separating it and aggregating implementations here
 
+use std::fmt::{Display, Formatter};
+
+use crate::field_value::ListElementError;
 use crate::from_html::{FromHtmlTextError, StructErrorCause, StructFieldError};
-use crate::mapper::impls::ListElementError;
 use crate::text_extractor::impls::AttributeNotFound;
 use crate::transformer::{VecToArrayError, VecToOptionError, VecToSingleError};
 use crate::Error;
 use crate::Never;
-use std::fmt::{Display, Formatter};
 
 impl<A, B> Display for StructFieldError<A, B>
 where

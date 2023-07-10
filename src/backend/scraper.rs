@@ -2,7 +2,7 @@ use h2s_core::{CssSelector, HtmlNode};
 use itertools::Itertools;
 use scraper::{ElementRef, Html, Selector};
 
-use crate::backend::{Backend, DocumentRoot};
+use crate::backend::{Backend, HtmlDocument};
 use std::fmt::{Display, Formatter};
 
 #[derive(Clone, Debug)]
@@ -20,7 +20,7 @@ impl Backend for Scraper {
 
 #[derive(Clone, Debug)]
 pub struct ScraperDocumentRoot(Html);
-impl DocumentRoot for ScraperDocumentRoot {
+impl HtmlDocument for ScraperDocumentRoot {
     type HtmlNode<'a> = ScraperHtmlNode<'a>;
 
     fn root_element(&self) -> Self::HtmlNode<'_> {

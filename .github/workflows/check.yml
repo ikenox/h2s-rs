@@ -58,6 +58,7 @@ jobs:
       - name: cargo version
         run: cargo --version
       - run: cargo test --workspace --all-targets
+      - run: cargo test --workspace --doc
   clippy:
     name: clippy
     runs-on: ubuntu-latest

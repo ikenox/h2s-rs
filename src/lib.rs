@@ -117,7 +117,7 @@ pub use h2s_core::*;
 pub use h2s_macro::*;
 
 use crate::backend::scraper::Scraper;
-use crate::backend::{Backend, DocumentRoot};
+use crate::backend::Backend;
 
 pub mod backend;
 
