@@ -2,8 +2,8 @@
 
 use std::fmt::Debug;
 
-mod display;
-mod error;
+pub mod display;
+pub mod error;
 pub mod field_value;
 pub mod from_html;
 pub mod from_text;
