@@ -67,8 +67,6 @@ pub enum VecToOptionError {
     TooManyElements { found: usize },
 }
 
-mod display {}
-
 #[cfg(test)]
 mod test {
     use crate::transformer::Transformer;

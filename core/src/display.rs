@@ -5,7 +5,7 @@ use std::fmt::{Display, Formatter};
 
 use crate::field_value::ListElementError;
 use crate::from_html::{FromHtmlTextError, StructErrorCause, StructFieldError};
-use crate::text_extractor::impls::AttributeNotFound;
+use crate::text_extractor::AttributeNotFound;
 use crate::transformer::{VecToArrayError, VecToOptionError, VecToSingleError};
 use crate::Error;
 use crate::Never;

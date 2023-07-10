@@ -1,6 +1,7 @@
+use std::fmt::Debug;
+
 use crate::Never;
 use crate::{Error, HtmlNode};
-use std::fmt::Debug;
 
 pub trait TextExtractor {
     type Error: Error;
@@ -9,56 +10,53 @@ pub trait TextExtractor {
         N: HtmlNode;
 }
 
-pub mod impls {
-    use super::*;
+/// A default text extractor that extracts inner text content
+impl TextExtractor for () {
+    type Error = Never;
 
-    /// A default text extractor that extracts inner text content
-    impl TextExtractor for () {
-        type Error = Never;
-
-        fn extract<N>(&self, source: &N) -> Result<String, Self::Error>
-        where
-            N: HtmlNode,
-        {
-            Ok(source.text_contents())
-        }
+    fn extract<N>(&self, source: &N) -> Result<String, Self::Error>
+    where
+        N: HtmlNode,
+    {
+        Ok(source.text_contents())
     }
+}
 
-    #[derive(Debug, Clone, Eq, PartialEq)]
-    pub struct ExtractAttribute {
-        pub name: String,
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct ExtractAttribute {
+    pub name: String,
+}
+
+/// An extractor that extracts the specified attribute value
+impl TextExtractor for ExtractAttribute {
+    type Error = AttributeNotFound;
+
+    fn extract<N>(&self, source: &N) -> Result<String, Self::Error>
+    where
+        N: HtmlNode,
+    {
+        source
+            .attribute(&self.name)
+            .map(|a| a.to_string())
+            .ok_or_else(|| AttributeNotFound {
+                name: self.name.clone(),
+            })
     }
+}
 
-    /// An extractor that extracts the specified attribute value
-    impl TextExtractor for ExtractAttribute {
-        type Error = AttributeNotFound;
-
-        fn extract<N>(&self, source: &N) -> Result<String, Self::Error>
-        where
-            N: HtmlNode,
-        {
-            source
-                .attribute(&self.name)
-                .map(|a| a.to_string())
-                .ok_or_else(|| AttributeNotFound {
-                    name: self.name.clone(),
-                })
-        }
-    }
-
-    #[derive(Debug, Clone, Eq, PartialEq)]
-    pub struct AttributeNotFound {
-        pub name: String,
-    }
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct AttributeNotFound {
+    pub name: String,
 }
 
 #[cfg(test)]
 mod test {
+    use std::collections::HashMap;
+
     use crate::from_html::{ExtractionType, FromHtmlTextError};
-    use crate::text_extractor::impls::AttributeNotFound;
+    use crate::text_extractor::AttributeNotFound;
     use crate::Never;
     use crate::{CssSelector, FromHtml, HtmlNode};
-    use std::collections::HashMap;
 
     #[test]
     fn attribute() {

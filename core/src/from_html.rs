@@ -1,7 +1,7 @@
 //! Implementations of `FromHtml` trait
 
 use crate::from_text::FromText;
-use crate::text_extractor::impls::AttributeNotFound;
+use crate::text_extractor::AttributeNotFound;
 use crate::Error;
 use crate::{FromHtml, HtmlNode};
 use std::fmt::Debug;
