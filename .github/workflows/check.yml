@@ -57,8 +57,7 @@ jobs:
       - uses: Swatinem/rust-cache@v1
       - name: cargo version
         run: cargo --version
-      - run: cargo test --all
-      - run: cargo test --examples
+      - run: cargo test --workspace --all-targets
   clippy:
     name: clippy
     runs-on: ubuntu-latest
@@ -72,4 +71,4 @@ jobs:
           components: clippy
       - uses: Swatinem/rust-cache@v1
       - name: run clippy
-        run: cargo clippy --all -- -D warnings
+        run: cargo clippy --workspace --all-targets
