@@ -1,13 +1,13 @@
 use crate::Error;
 use crate::Never;
 
-/// `Transformer` tries to transform `F<T>` -> `G<T>`.
-pub trait Transformer<T> {
+/// Tries to transform `F<T>` -> `G<T>`.
+pub trait Transformable<T> {
     type Error: Error;
     fn try_transform(self) -> Result<T, Self::Error>;
 }
 
-impl<N> Transformer<N> for Vec<N> {
+impl<N> Transformable<N> for Vec<N> {
     type Error = VecToSingleError;
 
     fn try_transform(mut self) -> Result<N, Self::Error> {
@@ -25,7 +25,7 @@ pub enum VecToSingleError {
     NoElements,
 }
 
-impl<N, const A: usize> Transformer<[N; A]> for Vec<N> {
+impl<N, const A: usize> Transformable<[N; A]> for Vec<N> {
     type Error = VecToArrayError;
 
     fn try_transform(self) -> Result<[N; A], Self::Error> {
@@ -42,7 +42,7 @@ pub enum VecToArrayError {
     ElementNumberUnmatched { expected: usize, found: usize },
 }
 
-impl<N> Transformer<Vec<N>> for Vec<N> {
+impl<N> Transformable<Vec<N>> for Vec<N> {
     type Error = Never;
 
     fn try_transform(self) -> Result<Vec<N>, Self::Error> {
@@ -50,7 +50,7 @@ impl<N> Transformer<Vec<N>> for Vec<N> {
     }
 }
 
-impl<N> Transformer<Option<N>> for Vec<N> {
+impl<N> Transformable<Option<N>> for Vec<N> {
     type Error = VecToOptionError;
 
     fn try_transform(mut self) -> Result<Option<N>, Self::Error> {
@@ -69,7 +69,7 @@ pub enum VecToOptionError {
 
 #[cfg(test)]
 mod test {
-    use crate::transformer::Transformer;
+    use crate::transformer::Transformable;
     use crate::transformer::{VecToArrayError, VecToOptionError, VecToSingleError};
 
     #[test]

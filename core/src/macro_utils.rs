@@ -3,10 +3,9 @@
 //! If you are just a h2s user, you wouldn't call these methods directly.
 
 use crate::from_html::{ExtractionType, StructErrorCause, StructFieldError};
-use crate::transformer::Transformer;
-use crate::FieldValue;
-
+use crate::transformer::Transformable;
 use crate::Error;
+use crate::FieldValue;
 use crate::{CssSelector, FromHtml, HtmlNode};
 
 pub fn select<N>(source: &N, selector: &'static str) -> Vec<N>
@@ -21,7 +20,8 @@ where
     source.select(&selector)
 }
 
-pub fn try_transform_and_map<N, F, S>(
+/// Tries to parse the specified source HTML element/elements into the specified field value
+pub fn try_parse_into_field<N, F, S>(
     source: S,
     args: &<F::Inner as FromHtml>::Args,
     selector: Option<&'static str>,
@@ -30,7 +30,7 @@ pub fn try_transform_and_map<N, F, S>(
 where
     N: HtmlNode,
     F: FieldValue,
-    S: Transformer<F::Structure<N>>,
+    S: Transformable<F::Structure<N>>,
 {
     source
         .try_transform()
