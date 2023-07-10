@@ -120,7 +120,7 @@ mod test {
         type Args = ();
         type Error = ErrorImpl;
 
-        fn from_html<N>(source: &N, args: &Self::Args) -> Result<Self, Self::Error>
+        fn from_html<N>(_source: &N, _args: &Self::Args) -> Result<Self, Self::Error>
         where
             N: HtmlNode,
         {
