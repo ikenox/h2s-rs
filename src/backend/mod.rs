@@ -1,22 +1,14 @@
 //! You can select backend HTML parser library to use, or you can also implement custom backend by yourself.
-use h2s_core::HtmlNode;
+use h2s_core::HtmlDocument;
 
 #[cfg(feature = "backend-scraper")]
 pub mod scraper;
 
 pub trait Backend {
-    type Root: DocumentRoot;
+    type Root: HtmlDocument;
     fn parse_document<S>(s: S) -> Self::Root
     where
         S: AsRef<str>;
-}
-
-pub trait DocumentRoot {
-    type HtmlNode<'a>: HtmlNode
-    where
-        Self: 'a;
-
-    fn root_element(&self) -> Self::HtmlNode<'_>;
 }
 
 // TODO create common test to check that backend satisfies required specs

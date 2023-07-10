@@ -21,6 +21,15 @@ pub trait FromHtml: Sized {
         N: HtmlNode;
 }
 
+/// HTML document
+pub trait HtmlDocument {
+    type HtmlNode<'a>: HtmlNode
+    where
+        Self: 'a;
+
+    fn root_element(&self) -> Self::HtmlNode<'_>;
+}
+
 // TODO not force to clone
 /// HTML Node
 pub trait HtmlNode: Sized + Clone {
