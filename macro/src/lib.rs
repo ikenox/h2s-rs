@@ -1,9 +1,10 @@
 //! A macro part of [h2s].
 //! [h2s]: https://github.com/ikenox/h2s-rs
 
+use proc_macro::TokenStream;
+
 use darling::ast::Data;
 use darling::{FromDeriveInput, FromField};
-use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use scraper::Selector;
 use syn::parse_macro_input;
@@ -21,7 +22,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
 #[darling(attributes(h2s), supports(struct_any))]
 struct FromHtmlStructReceiver {
     ident: syn::Ident,
-    data: darling::ast::Data<(), H2sFieldReceiver>,
+    data: Data<(), H2sFieldReceiver>,
 }
 
 #[derive(Debug, FromField)]
@@ -32,6 +33,7 @@ struct H2sFieldReceiver {
 
     select: Option<String>,
     attr: Option<String>,
+    // text: bool,
 }
 
 impl ToTokens for FromHtmlStructReceiver {
@@ -47,16 +49,15 @@ impl ToTokens for FromHtmlStructReceiver {
                     .into_iter()
                     .enumerate()
                     .map(|(i, r)| r.build_field_and_value(i));
-                // TODO Can I avoid to use trait object?
+                // TODO Avoid using trait object
                 quote! {
                     impl ::h2s::FromHtml for #ident {
-                        type Args = ();
-                        type Error = Box<dyn ::h2s::Error>;
+                        type Error = ::h2s::FieldError;
 
-                        fn from_html<N: ::h2s::HtmlNode>(
-                            source: &N,
-                            args: &Self::Args,
-                        ) -> Result<Self, Self::Error> {
+                        fn from_html<E>(input: E) -> Result<Self, Self::Error>
+                        where
+                            E: ::h2s::html::HtmlElement
+                        {
                             Ok(Self{
                                 #(#field_and_values),*
                             })
@@ -88,7 +89,7 @@ impl H2sFieldReceiver {
     }
 
     fn build_value(&self, field_name: &String) -> proc_macro2::TokenStream {
-        let source = match &self.select {
+        let selector = match &self.select {
             Some(selector) => {
                 // check selector validity at compile time
                 if Selector::parse(selector).is_err() {
@@ -102,27 +103,27 @@ impl H2sFieldReceiver {
                     )
                     .to_compile_error();
                 }
-                quote!(::h2s::macro_utils::select::<N>(source,#selector))
+                quote!(::h2s::element_selector::Select{ selector: #selector.to_string() })
             }
-            None => quote!(::std::vec![source.clone()]),
+            None => quote!(::h2s::element_selector::Root),
         };
 
-        // FIXME user‐unfriendly error message is shown when argument is mismatched
-        let args = match &self.attr {
-            // use specific one if specified
-            Some(attr) => {
-                quote!(&::h2s::from_html::ExtractionType::Attribute(#attr .to_string()))
-            }
-            // default
-            None => quote!(&::h2s::macro_utils::default_argument()),
+        // TODO user‐unfriendly error message is shown when argument is mismatched
+        let extraction_method = if let Some(attr) = self.attr.as_ref() {
+            quote!(::h2s::macro_utils::extraction_method(::h2s::extraction_method::ExtractAttribute{ name: #attr .to_string() }))
+        } else {
+            quote!(::h2s::macro_utils::default_extraction_method::<E, _>())
         };
 
-        let selector = self
-            .select
-            .as_ref()
-            .map(|a| quote!(::std::option::Option::Some(#a)))
-            .unwrap_or_else(|| quote!(::std::option::Option::None));
-
-        quote!(::h2s::macro_utils::try_parse_into_field::<N,_,_>(#source, #args, #selector, #field_name)?)
+        quote!({
+            let field_name = #field_name.to_string();
+            let selector = #selector;
+            let extraction_method = #extraction_method;
+            ::h2s::macro_utils::process_field(&input, selector, extraction_method)
+                .map_err(|error| ::h2s::FieldError {
+                    field_name,
+                    error: Box::new(error),
+                })?
+        })
     }
 }

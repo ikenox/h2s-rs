@@ -1,20 +1,37 @@
+use crate::functor::{ExactlyOne, Functor};
 use crate::Error;
 use crate::Never;
 
-/// Tries to transform `F<T>` -> `G<T>`.
-pub trait Transformable<T> {
+/// Tries to transform from `F<T>` to `G<T>`.
+pub trait Transformable<T>: Functor
+where
+    T: Functor<Inner = Self::Inner>,
+{
     type Error: Error;
     fn try_transform(self) -> Result<T, Self::Error>;
 }
 
-impl<N> Transformable<N> for Vec<N> {
+impl<T> Transformable<Self> for T
+where
+    T: Functor,
+{
+    type Error = Never;
+
+    fn try_transform(self) -> Result<T, Self::Error> {
+        Ok(self)
+    }
+}
+
+impl<N> Transformable<ExactlyOne<N>> for Vec<N> {
     type Error = VecToSingleError;
 
-    fn try_transform(mut self) -> Result<N, Self::Error> {
+    fn try_transform(mut self) -> Result<ExactlyOne<N>, Self::Error> {
         if self.len() > 1 {
             Err(VecToSingleError::TooManyElements { found: self.len() })
         } else {
-            self.pop().ok_or(VecToSingleError::NoElements)
+            self.pop()
+                .map(ExactlyOne)
+                .ok_or(VecToSingleError::NoElements)
         }
     }
 }
@@ -42,14 +59,6 @@ pub enum VecToArrayError {
     ElementNumberUnmatched { expected: usize, found: usize },
 }
 
-impl<N> Transformable<Vec<N>> for Vec<N> {
-    type Error = Never;
-
-    fn try_transform(self) -> Result<Vec<N>, Self::Error> {
-        Ok(self)
-    }
-}
-
 impl<N> Transformable<Option<N>> for Vec<N> {
     type Error = VecToOptionError;
 
@@ -69,18 +78,30 @@ pub enum VecToOptionError {
 
 #[cfg(test)]
 mod test {
-    use crate::transformer::Transformable;
-    use crate::transformer::{VecToArrayError, VecToOptionError, VecToSingleError};
+    use crate::functor::ExactlyOne;
+    use crate::transformable::Transformable;
+    use crate::transformable::{VecToArrayError, VecToOptionError, VecToSingleError};
+
+    #[test]
+    fn identity() {
+        assert_eq!(
+            ExactlyOne(0).try_transform() as Result<ExactlyOne<i32>, _>,
+            Ok(ExactlyOne(0))
+        );
+    }
 
     #[test]
     fn vec_to_single() {
-        assert_eq!(vec![0].try_transform() as Result<i32, _>, Ok(0));
         assert_eq!(
-            vec![].try_transform() as Result<i32, _>,
+            vec![0].try_transform() as Result<ExactlyOne<i32>, _>,
+            Ok(ExactlyOne(0))
+        );
+        assert_eq!(
+            vec![].try_transform() as Result<ExactlyOne<i32>, _>,
             Err(VecToSingleError::NoElements),
         );
         assert_eq!(
-            vec![0, 1].try_transform() as Result<i32, _>,
+            vec![0, 1].try_transform() as Result<ExactlyOne<i32>, _>,
             Err(VecToSingleError::TooManyElements { found: 2 }),
         );
     }

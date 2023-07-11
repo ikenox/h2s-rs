@@ -2,68 +2,127 @@
 //! These methods are shorthands to reduce codes in the `quote!` macro and improve development experience.
 //! If you are just a h2s user, you wouldn't call these methods directly.
 
-use crate::from_html::{ExtractionType, StructErrorCause, StructFieldError};
-use crate::transformer::Transformable;
-use crate::Error;
-use crate::FieldValue;
-use crate::{CssSelector, FromHtml, HtmlNode};
+use crate::element_selector::TargetElementSelector;
+use crate::extraction_method::ExtractionMethod;
+use crate::field_value::FieldValue;
+use crate::html::HtmlElement;
+use crate::parseable::{ExtractedValue, Parseable};
+use crate::transformable::Transformable;
+use crate::traversable::Traversable;
+use crate::traversable_with_context::{Context, FunctorWithContext};
+use std::error::Error;
+use std::fmt::Debug;
+use std::marker::PhantomData;
 
-pub fn select<N>(source: &N, selector: &'static str) -> Vec<N>
+/// Process the source HTML element into the specified field value
+#[allow(clippy::type_complexity)]
+pub fn process_field<E, S, T, M, V, W, P, I>(
+    source_element: &E,
+    target_element_selector: S,
+    // By surrounding extraction method value with `ExtractionMethodWithType`, a caller of this
+    // function can be empowered by type inference for a type of field value
+    ExtractionMethodWithType(extraction_method, _): ExtractionMethodWithType<V, M>,
+) -> Result<
+    V,
+    ProcessError<
+        TransformError<S, T::Error>,
+        ExtractionError<W::Context, M>,
+        ParseError<W::Context, P::Error>,
+    >,
+>
 where
-    N: HtmlNode,
+    E: HtmlElement,
+    S: TargetElementSelector<Output<E> = T>,
+    T: Transformable<W::Structure<E>, Inner = E>,
+    M: ExtractionMethod<ExtractedValue<E> = I>,
+    V: FieldValue<Wrapped = W, Inner = P>,
+    P: Parseable<Input<E> = I>,
+    I: ExtractedValue,
+    W: FunctorWithContext<Structure<P> = W, Inner = P> + Traversable,
 {
-    // TODO cache parsed selector
-    let selector = N::Selector::parse(selector)
-        // this should be never failed because the selector validity has been checked at compile-time
-        // TODO avoid unwrap
-        .unwrap();
-    source.select(&selector)
-}
-
-/// Tries to parse the specified source HTML element/elements into the specified field value
-pub fn try_parse_into_field<N, F, S>(
-    source: S,
-    args: &<F::Inner as FromHtml>::Args,
-    selector: Option<&'static str>,
-    field_name: &'static str,
-) -> Result<F, Box<dyn Error>>
-where
-    N: HtmlNode,
-    F: FieldValue,
-    S: Transformable<F::Structure<N>>,
-{
-    source
+    let target_elements = target_element_selector.select(source_element);
+    let transformed = target_elements
         .try_transform()
-        .map_err(StructErrorCause::StructureUnmatched)
-        .and_then(|s| {
-            F::try_traverse_from(s, |n| <F::Inner as FromHtml>::from_html(&n, args))
-                .map_err(StructErrorCause::ParseError)
+        .map_err(|error| TransformError {
+            selector: target_element_selector,
+            error,
         })
-        .map_err(|e| StructFieldError {
-            field_name: field_name.to_string(),
-            selector: selector.map(|a| a.to_string()),
-            error: e,
+        .map_err(ProcessError::TransformError)?;
+    let with_context: W::Structure<(W::Context, _)> =
+        W::fmap_with_context(transformed, |ctx, a: E| (ctx, a));
+    let extracted: W::Structure<(_, _)> = W::traverse(with_context, |(ctx, a)| {
+        match extraction_method.extract(a) {
+            Ok(a) => Ok((ctx, a)),
+            Err(e) => Err((ctx, e)),
+        }
+    })
+    .map_err(|(ctx, e)| ExtractionError {
+        extraction_method,
+        context: ctx,
+        error: e,
+    })
+    .map_err(ProcessError::ExtractionError)?;
+    let parsed: W::Structure<P> = W::traverse(extracted, |(ctx, a)| {
+        P::parse::<E>(a).map_err(|error| ParseError {
+            context: ctx,
+            error,
         })
-        .map_err(|e| Box::new(e) as Box<dyn Error>)
+    })
+    .map_err(ProcessError::ParseError)?;
+    Ok(V::finalize(parsed))
 }
 
-pub fn default_argument<T>() -> T
+pub struct ExtractionMethodWithType<V, E>(E, PhantomData<V>);
+
+pub fn extraction_method<V, E>(e: E) -> ExtractionMethodWithType<V, E> {
+    ExtractionMethodWithType(e, PhantomData)
+}
+
+pub fn default_extraction_method<N: HtmlElement, V>(
+) -> ExtractionMethodWithType<V, <<V::Inner as Parseable>::Input<N> as ExtractedValue>::Default>
 where
-    T: DefaultArg,
+    V: FieldValue,
 {
-    DefaultArg::default()
+    ExtractionMethodWithType(
+        <<V::Inner as Parseable>::Input<N> as ExtractedValue>::default_method(),
+        PhantomData,
+    )
 }
 
-pub trait DefaultArg {
-    fn default() -> Self;
+#[derive(Debug)]
+pub enum ProcessError<A, B, C> {
+    TransformError(A),
+    ExtractionError(B),
+    ParseError(C),
 }
 
-impl DefaultArg for () {
-    fn default() -> Self {}
+#[derive(Debug, Clone)]
+pub struct TransformError<S, E>
+where
+    S: TargetElementSelector,
+    E: Error,
+{
+    pub selector: S,
+    pub error: E,
 }
 
-impl DefaultArg for ExtractionType {
-    fn default() -> Self {
-        ExtractionType::Text
-    }
+#[derive(Debug, Clone)]
+pub struct ExtractionError<C, M>
+where
+    C: Context,
+    M: ExtractionMethod,
+{
+    pub context: C,
+    pub extraction_method: M,
+    pub error: M::Error,
+}
+
+#[derive(Debug, Clone)]
+pub struct ParseError<C, E>
+where
+    C: Context,
+    E: Error,
+{
+    pub context: C,
+    pub error: E,
 }

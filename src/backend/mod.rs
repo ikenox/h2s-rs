@@ -1,5 +1,5 @@
 //! You can select backend HTML parser library to use, or you can also implement custom backend by yourself.
-use h2s_core::HtmlDocument;
+use h2s_core::html::HtmlDocument;
 
 #[cfg(feature = "backend-scraper")]
 pub mod scraper;
