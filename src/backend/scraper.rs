@@ -1,8 +1,9 @@
-use h2s_core::{CssSelector, HtmlNode};
 use itertools::Itertools;
 use scraper::{ElementRef, Html, Selector};
+use std::error::Error;
 
-use crate::backend::{Backend, HtmlDocument};
+use crate::backend::Backend;
+use h2s_core::html::{CssSelector, HtmlDocument, HtmlElement};
 use std::fmt::{Display, Formatter};
 
 #[derive(Clone, Debug)]
@@ -20,11 +21,12 @@ impl Backend for Scraper {
 
 #[derive(Clone, Debug)]
 pub struct ScraperDocumentRoot(Html);
-impl HtmlDocument for ScraperDocumentRoot {
-    type HtmlNode<'a> = ScraperHtmlNode<'a>;
 
-    fn root_element(&self) -> Self::HtmlNode<'_> {
-        ScraperHtmlNode::ElementRef(self.0.root_element())
+impl HtmlDocument for ScraperDocumentRoot {
+    type Element<'a> = ScraperHtmlElement<'a>;
+
+    fn root_element(&self) -> Self::Element<'_> {
+        ScraperHtmlElement(self.0.root_element())
     }
 }
 
@@ -32,37 +34,24 @@ impl HtmlDocument for ScraperDocumentRoot {
 pub struct ScraperCssSelector(Selector);
 
 #[derive(Clone, Debug)]
-pub enum ScraperHtmlNode<'a> {
-    ElementRef(ElementRef<'a>),
-}
+pub struct ScraperHtmlElement<'a>(ElementRef<'a>);
 
-impl<'a> ScraperHtmlNode<'a> {
-    fn as_element_ref(&self) -> ElementRef<'a> {
-        match self {
-            ScraperHtmlNode::ElementRef(elem) => *elem,
-        }
-    }
-}
-
-impl<'a> HtmlNode for ScraperHtmlNode<'a> {
+impl<'a> HtmlElement for ScraperHtmlElement<'a> {
     type Selector = ScraperCssSelector;
 
     fn select(&self, selector: &Self::Selector) -> Vec<Self> {
-        self.as_element_ref()
-            .select(&selector.0)
-            .map(ScraperHtmlNode::<'a>::ElementRef)
-            .collect()
+        self.0.select(&selector.0).map(ScraperHtmlElement).collect()
     }
 
     fn text_contents(&self) -> String {
-        self.as_element_ref().text().join("")
+        self.0.text().join("")
     }
 
     fn attribute<S>(&self, attr: S) -> Option<&str>
     where
         S: AsRef<str>,
     {
-        self.as_element_ref().value().attr(attr.as_ref())
+        self.0.value().attr(attr.as_ref())
     }
 }
 
@@ -75,7 +64,7 @@ impl CssSelector for ScraperCssSelector {
     {
         Selector::parse(s.as_ref())
             .map(ScraperCssSelector)
-            // FIXME The error detail is dropped
+            // TODO The error detail is dropped
             .map_err(|_| ParseFailed)
     }
 }
@@ -83,7 +72,7 @@ impl CssSelector for ScraperCssSelector {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ParseFailed;
 
-impl std::error::Error for ParseFailed {}
+impl Error for ParseFailed {}
 
 impl Display for ParseFailed {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -94,7 +83,7 @@ impl Display for ParseFailed {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{CssSelector, HtmlNode};
+    use h2s_core::html::{CssSelector, HtmlElement};
 
     #[test]
     fn selector() {
@@ -108,7 +97,7 @@ mod test {
 
     #[test]
     fn select() {
-        let node = Scraper::parse_document(
+        let elem = Scraper::parse_document(
             r#"
 <!DOCTYPE html>
 <html>
@@ -128,41 +117,35 @@ mod test {
 </html>
         "#,
         );
-        let a_span = node
+        let a_span = elem
             .root_element()
             .select(&CssSelector::parse("div.a > span").unwrap());
         assert_eq!(
-            a_span
-                .iter()
-                .map(|e| e.as_element_ref().html())
-                .collect::<Vec<_>>(),
+            a_span.iter().map(|e| e.0.html()).collect::<Vec<_>>(),
             (1..=3)
                 .map(|s| format!("<span>{s}</span>"))
                 .collect::<Vec<_>>(),
         );
 
         // nested select
-        let b = &node
+        let b = &elem
             .root_element()
             .select(&CssSelector::parse(".b").unwrap())[0];
         let b_span = b.select(&CssSelector::parse("span").unwrap());
         assert_eq!(b_span.len(), 1);
-        assert_eq!(
-            b_span[0].as_element_ref().html(),
-            "<span>4</span>".to_string()
-        );
+        assert_eq!(b_span[0].0.html(), "<span>4</span>".to_string());
     }
 
     #[test]
     fn text_contents() {
-        let node = Scraper::parse_document("<html><div>a<div>b</div><div>c</div></div></html>");
-        assert_eq!(node.root_element().text_contents(), "abc");
+        let elem = Scraper::parse_document("<html><div>a<div>b</div><div>c</div></div></html>");
+        assert_eq!(elem.root_element().text_contents(), "abc");
     }
 
     #[test]
     fn get_attribute() {
-        let node = Scraper::parse_document(r#"<html><div id="foo" class="bar" /></html>"#);
-        let elem = node
+        let elem = Scraper::parse_document(r#"<html><div id="foo" class="bar" /></html>"#);
+        let elem = elem
             .root_element()
             .select(&CssSelector::parse("div").unwrap())[0]
             .clone();

@@ -1,27 +1,43 @@
 //! Implementations of `std::error::Error`
 
-use crate::field_value::ListElementError;
-use crate::from_html::{FromHtmlTextError, StructFieldError};
-use crate::text_extractor::AttributeNotFound;
-use crate::transformer::{VecToArrayError, VecToOptionError, VecToSingleError};
-use crate::{Error, Never};
+use std::fmt::{Debug, Display};
 
-impl std::error::Error for VecToArrayError {}
-impl std::error::Error for VecToSingleError {}
-impl std::error::Error for VecToOptionError {}
-impl std::error::Error for AttributeNotFound {}
-impl<A> std::error::Error for ListElementError<A> where A: Error {}
-impl<A, B> std::error::Error for FromHtmlTextError<A, B>
+use crate::element_selector::TargetElementSelector;
+use crate::extraction_method::{AttributeNotFound, ExtractionMethod};
+use crate::functor::ExactlyOne;
+use crate::macro_utils::{ExtractionError, ParseError, ProcessError, TransformError};
+use crate::transformable::{VecToArrayError, VecToOptionError, VecToSingleError};
+use crate::traversable_with_context::Context;
+use crate::{Error, FieldError, Never};
+
+impl Error for VecToArrayError {}
+impl Error for VecToSingleError {}
+impl Error for VecToOptionError {}
+impl Error for AttributeNotFound {}
+impl<E> Error for ExactlyOne<E> where E: Error {}
+impl Error for Never {}
+impl Error for FieldError {}
+
+impl<S, E> Error for TransformError<S, E>
 where
-    A: Error,
-    B: Error,
+    Self: Display,
+    S: TargetElementSelector,
+    E: Error,
 {
 }
-impl<A, B> std::error::Error for StructFieldError<A, B>
+
+impl<C, M> Error for ExtractionError<C, M>
 where
-    A: Error,
-    B: Error,
+    C: Context,
+    M: ExtractionMethod,
 {
 }
-impl std::error::Error for Never {}
-impl std::error::Error for Box<dyn Error> {}
+
+impl<C, E> Error for ParseError<C, E>
+where
+    C: Context,
+    E: Error,
+{
+}
+
+impl<A, B, C> Error for ProcessError<A, B, C> where Self: Display + Debug {}

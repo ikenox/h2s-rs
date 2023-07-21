@@ -92,7 +92,7 @@
 //! let err = h2s::parse::<Page>(invalid_html).unwrap_err();
 //! assert_eq!(
 //!   err.to_string(),
-//!   "articles(.articles > div): [2]: title(h2 > a): expected exactly one element, but no elements found"
+//!   "articles: [2]: title: mismatched number of selected elements by \"h2 > a\": expected exactly one element, but no elements found"
 //! );
 //! ```
 //!
@@ -113,6 +113,7 @@
 //!   - `Option<T>`
 //!   - `Vec<T>`
 
+use h2s_core::html::HtmlDocument;
 pub use h2s_core::*;
 pub use h2s_macro::*;
 
@@ -125,17 +126,17 @@ pub mod backend;
 #[cfg(feature = "backend-scraper")]
 pub fn parse<T>(html: impl AsRef<str>) -> Result<T, T::Error>
 where
-    for<'b> T: FromHtml<Args = ()>,
+    for<'b> T: FromHtml,
 {
     #[cfg(feature = "backend-scraper")]
-    parse_with_backend::<T, Scraper>(html, &())
+    parse_with_backend::<T, Scraper>(html)
 }
 
 /// Parsing with specific backend HTML parser
-pub fn parse_with_backend<T, B>(html: impl AsRef<str>, args: &T::Args) -> Result<T, T::Error>
+pub fn parse_with_backend<T, B>(html: impl AsRef<str>) -> Result<T, T::Error>
 where
     T: FromHtml,
     B: Backend,
 {
-    T::from_html(&B::parse_document(html).root_element(), args)
+    T::from_html(B::parse_document(html).root_element())
 }

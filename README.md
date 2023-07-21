@@ -96,7 +96,7 @@ let invalid_html = html.replace(r#"<a href="https://example.com/3">article3</a>"
 let err = h2s::parse::<Page>(invalid_html).unwrap_err();
 assert_eq!(
   err.to_string(),
-  "articles(.articles > div): [2]: title(h2 > a): expected exactly one element, but no elements found"
+  "articles: [2]: title: mismatched number of selected elements by \"h2 > a\": expected exactly one element, but no elements found"
 );
 ```
 
