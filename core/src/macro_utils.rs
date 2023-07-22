@@ -7,7 +7,7 @@ use crate::extraction_method::ExtractionMethod;
 use crate::field_value::FieldValue;
 use crate::html::HtmlElement;
 use crate::parseable::{ExtractedValue, Parseable};
-use crate::transformable::Transformable;
+use crate::transformable::TransformableFrom;
 use crate::traversable::Traversable;
 use crate::traversable_with_context::{Context, FunctorWithContext};
 use std::error::Error;
@@ -25,7 +25,7 @@ pub fn process_field<E, S, T, M, V, W, P, I>(
 ) -> Result<
     V,
     ProcessError<
-        TransformError<S, T::Error>,
+        TransformError<S, <W::Structure<E> as TransformableFrom<S::Output<E>>>::Error>,
         ExtractionError<W::Context, M>,
         ParseError<W::Context, P::Error>,
     >,
@@ -33,7 +33,7 @@ pub fn process_field<E, S, T, M, V, W, P, I>(
 where
     E: HtmlElement,
     S: TargetElementSelector<Output<E> = T>,
-    T: Transformable<W::Structure<E>, Inner = E>,
+    W::Structure<E>: TransformableFrom<S::Output<E>>,
     M: ExtractionMethod<ExtractedValue<E> = I>,
     V: FieldValue<Wrapped = W, Inner = P>,
     P: Parseable<Input<E> = I>,
@@ -41,13 +41,13 @@ where
     W: FunctorWithContext<Structure<P> = W, Inner = P> + Traversable,
 {
     let target_elements = target_element_selector.select(source_element);
-    let transformed = target_elements
-        .try_transform()
-        .map_err(|error| TransformError {
-            selector: target_element_selector,
-            error,
-        })
-        .map_err(ProcessError::TransformError)?;
+    let transformed =
+        <W::Structure<E> as TransformableFrom<_>>::try_transform_from(target_elements)
+            .map_err(|error| TransformError {
+                selector: target_element_selector,
+                error,
+            })
+            .map_err(ProcessError::TransformError)?;
     let with_context: W::Structure<(W::Context, _)> =
         W::fmap_with_context(transformed, |ctx, a: E| (ctx, a));
     let extracted: W::Structure<(_, _)> = W::traverse(with_context, |(ctx, a)| {
