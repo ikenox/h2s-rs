@@ -41,16 +41,14 @@ where
     W: FunctorWithContext<Structure<P> = W, Inner = P> + Traversable,
 {
     let target_elements = target_element_selector.select(source_element);
-    let transformed =
-        <W::Structure<E> as TransformableFrom<_>>::try_transform_from(target_elements)
-            .map_err(|error| TransformError {
-                selector: target_element_selector,
-                error,
-            })
-            .map_err(ProcessError::TransformError)?;
-    let with_context: W::Structure<(W::Context, _)> =
-        W::fmap_with_context(transformed, |ctx, a: E| (ctx, a));
-    let extracted: W::Structure<(_, _)> = W::traverse(with_context, |(ctx, a)| {
+    let transformed = <_>::try_transform_from(target_elements)
+        .map_err(|error| TransformError {
+            selector: target_element_selector,
+            error,
+        })
+        .map_err(ProcessError::TransformError)?;
+    let with_context = W::fmap_with_context(transformed, |ctx, a: E| (ctx, a));
+    let extracted = W::traverse(with_context, |(ctx, a)| {
         match extraction_method.extract(a) {
             Ok(a) => Ok((ctx, a)),
             Err(e) => Err((ctx, e)),
@@ -62,7 +60,7 @@ where
         error: e,
     })
     .map_err(ProcessError::ExtractionError)?;
-    let parsed: W::Structure<P> = W::traverse(extracted, |(ctx, a)| {
+    let parsed = W::traverse(extracted, |(ctx, a)| {
         P::parse::<E>(a).map_err(|error| ParseError {
             context: ctx,
             error,
