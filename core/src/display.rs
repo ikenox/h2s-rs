@@ -5,7 +5,8 @@ use std::fmt::{Display, Formatter};
 
 use crate::element_selector::{Root, Select};
 use crate::extraction_method::{
-    AttributeNotFound, ExtractAttribute, ExtractInnerText, ExtractionMethod, NoOp,
+    AttributeNotFound, ExtractAttribute, ExtractInnerText, ExtractNthText, ExtractionMethod, NoOp,
+    NotFound,
 };
 use crate::functor::ExactlyOne;
 use crate::macro_utils::{ExtractionError, ParseError, ProcessError, TransformError};
@@ -186,5 +187,17 @@ impl Display for ListIndex {
 impl Display for NoContext {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "")
+    }
+}
+
+impl Display for ExtractNthText {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "ExtractNthText({})", self.0)
+    }
+}
+
+impl Display for NotFound {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "text node of the specified number is not found")
     }
 }
