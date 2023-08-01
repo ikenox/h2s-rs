@@ -2,20 +2,23 @@ use h2s::extraction_method::ExtractNthText;
 use h2s::FromHtml;
 
 #[derive(FromHtml)]
-struct TreeNode {
-    #[h2s(select="div", extractor = ExtractNthText(0))]
-    a: String,
-    #[h2s(select="div", extractor = ExtractNthText(1))]
-    b: String,
-    #[h2s(select="div", extractor = ExtractNthText(2))]
-    c: String,
+struct Fragment {
+    #[h2s(select = "div")]
+    inner: Inner,
+}
 
-    #[h2s(select = "ul > li")]
-    xy: Vec<String>,
+#[derive(FromHtml)]
+struct Inner {
+    #[h2s(extractor = ExtractNthText(0))]
+    a: String,
+    #[h2s(extractor = ExtractNthText(1))]
+    b: String,
+    #[h2s(extractor = ExtractNthText(2))]
+    c: String,
 }
 
 fn main() {
-    let my_struct = h2s::parse::<TreeNode>(
+    let my_struct = h2s::parse::<Fragment>(
         r#"<div>
              A
              <ul>
@@ -29,10 +32,9 @@ fn main() {
           "#,
     )
     .unwrap();
-    assert_eq!(&my_struct.a, "A");
-    assert_eq!(&my_struct.b, "B");
-    assert_eq!(&my_struct.c, "C");
-    assert_eq!(my_struct.xy, vec!["X".to_string(), "Y".to_string()]);
+    assert_eq!(&my_struct.inner.a, "A");
+    assert_eq!(&my_struct.inner.b, "B");
+    assert_eq!(&my_struct.inner.c, "C");
 }
 
 #[test]
