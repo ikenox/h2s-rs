@@ -3,7 +3,7 @@
 use std::fmt::{Debug, Display};
 
 use crate::element_selector::TargetElementSelector;
-use crate::extraction_method::{AttributeNotFound, ExtractionMethod};
+use crate::extraction_method::{AttributeNotFound, ExtractionMethod, NotFound};
 use crate::functor::ExactlyOne;
 use crate::macro_utils::{ExtractionError, ParseError, ProcessError, TransformError};
 use crate::transformable::{VecToArrayError, VecToOptionError, VecToSingleError};
@@ -41,3 +41,5 @@ where
 }
 
 impl<A, B, C> Error for ProcessError<A, B, C> where Self: Display + Debug {}
+
+impl Error for NotFound {}

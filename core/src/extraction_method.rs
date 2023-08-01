@@ -1,4 +1,4 @@
-use crate::html::HtmlElement;
+use crate::html::{HtmlElement, HtmlNode, TextNode};
 use crate::parseable::ExtractedValue;
 use crate::{Error, Never};
 use std::fmt::{Debug, Display};
@@ -66,3 +66,31 @@ impl ExtractionMethod for ExtractAttribute {
 pub struct AttributeNotFound {
     pub name: String,
 }
+
+/// Extracts nth text node's text
+#[derive(Debug)]
+pub struct ExtractNthText(pub usize);
+
+impl ExtractionMethod for ExtractNthText {
+    type Error = NotFound;
+    type ExtractedValue<N: HtmlElement> = String;
+
+    fn extract<N: HtmlElement>(&self, element: N) -> Result<Self::ExtractedValue<N>, Self::Error> {
+        dbg!(element.child_nodes());
+        element
+            .child_nodes()
+            .iter()
+            .filter_map(|n| match n {
+                HtmlNode::Text(text) => Some(text),
+                _ => None,
+            })
+            .map(|t| t.get_text())
+            .filter(|s| !s.trim().is_empty())
+            .nth(self.0)
+            .map(|s| s.trim().to_string())
+            .ok_or(NotFound)
+    }
+}
+
+#[derive(Debug)]
+pub struct NotFound;
