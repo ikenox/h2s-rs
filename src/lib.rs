@@ -113,12 +113,11 @@
 //!   - `Option<T>`
 //!   - `Vec<T>`
 
-use h2s_core::html::HtmlDocument;
+use h2s_core::html::{Backend, HtmlDocument};
 pub use h2s_core::*;
 pub use h2s_macro::*;
 
 use crate::backend::scraper::Scraper;
-use crate::backend::Backend;
 
 pub mod backend;
 
@@ -138,5 +137,5 @@ where
     T: FromHtml,
     B: Backend,
 {
-    T::from_html(B::parse_document(html).root_element())
+    T::from_html(B::parse_fragment(html).root_element())
 }
