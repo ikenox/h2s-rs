@@ -108,8 +108,8 @@ You can use the following types as a field value of the struct to parse.
 
   - `String`
   - Numeric types ( `usize`, `i64`, `NonZeroU32`, ... )
-  - And more built-in supported types ([List](./core/src/from_text.rs))
-  - Or you can use any types by implementing yourself ([Example](./examples/from_text_custom.rs))
+  - And more built-in supported types ([List](./core/src/parseable.rs))
+  - Or you can use any types by implementing yourself ([Example](./examples/custom_field_value.rs))
 
 ### Container types (where `T` is a basic type)
 
