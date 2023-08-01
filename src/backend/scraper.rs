@@ -14,11 +14,11 @@ impl Backend for Scraper {
     type Element<'a> = ScraperHtmlElement<'a>;
     type Text<'a> = ScraperTextNode<'a>;
 
-    fn parse_fragment<S>(s: S) -> Self::Document
+    fn parse_document<S>(s: S) -> Self::Document
     where
         S: AsRef<str>,
     {
-        ScraperDocument(Html::parse_fragment(s.as_ref()))
+        ScraperDocument(Html::parse_document(s.as_ref()))
     }
 }
 
@@ -129,7 +129,7 @@ mod test {
 
     #[test]
     fn select() {
-        let doc = Scraper::parse_fragment(
+        let doc = Scraper::parse_document(
             r#"
 <!DOCTYPE html>
 <html>
@@ -170,13 +170,13 @@ mod test {
 
     #[test]
     fn text_contents() {
-        let doc = Scraper::parse_fragment("<html><div>a<div>b</div><div>c</div></div></html>");
+        let doc = Scraper::parse_document("<html><div>a<div>b</div><div>c</div></div></html>");
         assert_eq!(doc.root_element().text_contents(), "abc");
     }
 
     #[test]
     fn get_attribute() {
-        let doc = Scraper::parse_fragment(r#"<html><div id="foo" class="bar" /></html>"#);
+        let doc = Scraper::parse_document(r#"<html><div id="foo" class="bar" /></html>"#);
         let elem = doc
             .root_element()
             .select(&CssSelector::parse("div").unwrap())[0]
@@ -187,9 +187,11 @@ mod test {
 
     #[test]
     fn child_nodes() {
-        let doc = Scraper::parse_fragment("<html><div>a<div></div></div>b<div>c</div>d</html>");
+        let doc = Scraper::parse_document("<div><div>a<div></div></div>b<div>c</div>d</div>");
+        println!("{:#?}", &doc.0.tree);
         assert_eq!(
             doc.root_element()
+                .select(&CssSelector::parse("div").unwrap())[0]
                 .child_nodes()
                 .into_iter()
                 .map(|n| match n {

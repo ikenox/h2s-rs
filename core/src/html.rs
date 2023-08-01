@@ -1,7 +1,8 @@
 use std::error::Error;
+use std::fmt::Debug;
 
 /// HTML document
-pub trait HtmlDocument {
+pub trait HtmlDocument: Debug {
     type Element<'a>: HtmlElement
     where
         Self: 'a;
@@ -10,11 +11,12 @@ pub trait HtmlDocument {
 }
 
 /// HTML Element
-pub trait HtmlElement: Sized + Clone {
+pub trait HtmlElement: Sized + Debug + Clone {
     type Backend: Backend;
     type Selector: CssSelector;
 
     fn select(&self, selector: &Self::Selector) -> Vec<Self>;
+    // TODO remove this method
     fn text_contents(&self) -> String;
     fn attribute<S>(&self, attr: S) -> Option<&str>
     where
@@ -42,15 +44,15 @@ where
     Other,
 }
 
-pub trait TextNode {
+pub trait TextNode: Debug {
     fn get_text(&self) -> String;
 }
 
-pub trait Backend {
+pub trait Backend: Debug {
     type Document: HtmlDocument;
     type Element<'a>: HtmlElement;
     type Text<'a>: TextNode;
-    fn parse_fragment<S>(s: S) -> Self::Document
+    fn parse_document<S>(s: S) -> Self::Document
     where
         S: AsRef<str>;
 }

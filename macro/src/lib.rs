@@ -7,8 +7,8 @@ use darling::ast::Data;
 use darling::{FromDeriveInput, FromField};
 use quote::{quote, ToTokens};
 use scraper::Selector;
-use syn::parse_macro_input;
 use syn::spanned::Spanned;
+use syn::{parse_macro_input, Expr};
 
 #[proc_macro_derive(FromHtml, attributes(h2s))]
 pub fn derive(input: TokenStream) -> TokenStream {
@@ -32,6 +32,9 @@ struct H2sFieldReceiver {
     ty: syn::Type,
 
     select: Option<String>,
+    extractor: Option<Expr>,
+    // TODO attr is a shorthand of specific extractor
+    //      so it's better to represent that user cannot specify both
     attr: Option<String>,
     // text: bool,
 }
@@ -111,6 +114,8 @@ impl H2sFieldReceiver {
         // TODO user‐unfriendly error message is shown when argument is mismatched
         let extraction_method = if let Some(attr) = self.attr.as_ref() {
             quote!(::h2s::macro_utils::extraction_method(::h2s::extraction_method::ExtractAttribute{ name: #attr .to_string() }))
+        } else if let Some(a) = self.extractor.as_ref() {
+            quote!(::h2s::macro_utils::extraction_method(#a))
         } else {
             quote!(::h2s::macro_utils::default_extraction_method::<E, _>())
         };

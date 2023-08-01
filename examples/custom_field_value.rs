@@ -1,8 +1,8 @@
 use std::num::ParseIntError;
 
+use h2s::html::HtmlElement;
+use h2s::parseable::Parseable;
 use h2s::FromHtml;
-use h2s_core::html::HtmlElement;
-use h2s_core::parseable::Parseable;
 
 fn main() {
     // You can define an external parseable type yourself
