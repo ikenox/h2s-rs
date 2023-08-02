@@ -4,6 +4,7 @@
 //!
 //! ```
 //! use h2s::FromHtml;
+//! use h2s::extraction_method::ExtractNthText;
 //!
 //! #[derive(FromHtml, Debug, Eq, PartialEq)]
 //! pub struct Page {
@@ -13,6 +14,8 @@
 //!     blog_title: String,
 //!     #[h2s(select = ".articles > div")]
 //!     articles: Vec<Article>,
+//!     #[h2s(select = "body", extractor = ExtractNthText(1))]
+//!     footer2: String,
 //! }
 //!
 //! #[derive(FromHtml, Debug, Eq, PartialEq)]
@@ -52,6 +55,9 @@
 //!           </div>
 //!       </div>
 //!   </div>
+//!   footer1
+//!   <hr />
+//!   footer2
 //! </body>
 //! </html>
 //! "#;
@@ -83,7 +89,8 @@
 //!             tags: vec!["Tag3".to_string()],
 //!             first_tag: Some("Tag3".to_string()),
 //!         },
-//!     ]
+//!     ],
+//!     footer2: "footer2".to_string(),
 //! });
 //!
 //! // When the input HTML document structure does not match the expected,
