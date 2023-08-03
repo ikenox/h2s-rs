@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use scraper::{ElementRef, Html, Node, Selector};
 use std::error::Error;
 
@@ -48,13 +47,16 @@ pub struct ScraperHtmlElement<'a>(ElementRef<'a>);
 impl<'a> HtmlElement for ScraperHtmlElement<'a> {
     type Backend = Scraper;
     type Selector = ScraperCssSelector;
+    type TextContents<'b> = scraper::element_ref::Text<'b>
+    where
+        Self:'b;
 
     fn select(&self, selector: &Self::Selector) -> Vec<Self> {
         self.0.select(&selector.0).map(ScraperHtmlElement).collect()
     }
 
-    fn text_contents(&self) -> String {
-        self.0.text().join("")
+    fn text_contents(&self) -> Self::TextContents<'a> {
+        self.0.text()
     }
 
     fn attribute<S>(&self, attr: S) -> Option<&str>
@@ -171,7 +173,10 @@ mod test {
     #[test]
     fn text_contents() {
         let doc = Scraper::parse_document("<html><div>a<div>b</div><div>c</div></div></html>");
-        assert_eq!(doc.root_element().text_contents(), "abc");
+        assert_eq!(
+            doc.root_element().text_contents().collect::<Vec<_>>(),
+            vec!["a", "b", "c"]
+        );
     }
 
     #[test]
@@ -196,7 +201,10 @@ mod test {
                 .into_iter()
                 .map(|n| match n {
                     HtmlNode::Text(text) => text.get_text(),
-                    HtmlNode::Element(elem) => format!("elem-{}", elem.text_contents()),
+                    HtmlNode::Element(elem) => format!(
+                        "elem-{}",
+                        elem.text_contents().fold("".to_string(), |a, b| a + b)
+                    ),
                     _ => panic!("unexpected node type: {:?}", n),
                 })
                 .collect::<Vec<_>>(),
