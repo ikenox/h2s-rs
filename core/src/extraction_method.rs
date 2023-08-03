@@ -36,7 +36,7 @@ impl ExtractionMethod for ExtractInnerText {
     where
         N: HtmlElement,
     {
-        Ok(element.text_contents())
+        Ok(element.text_contents().fold("".to_string(), |a, b| a + b))
     }
 }
 

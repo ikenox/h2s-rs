@@ -14,10 +14,13 @@ pub trait HtmlDocument: Debug {
 pub trait HtmlElement: Sized + Debug + Clone {
     type Backend: Backend;
     type Selector: CssSelector;
+    type TextContents<'a>: Iterator<Item = &'a str>
+    where
+        Self: 'a;
 
     fn select(&self, selector: &Self::Selector) -> Vec<Self>;
     // TODO remove this method
-    fn text_contents(&self) -> String;
+    fn text_contents(&self) -> Self::TextContents<'_>;
     fn attribute<S>(&self, attr: S) -> Option<&str>
     where
         S: AsRef<str>;
