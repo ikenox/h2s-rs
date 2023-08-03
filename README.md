@@ -2,6 +2,8 @@
 
 # h2s
 
+<!-- cargo-rdme start -->
+
 A declarative HTML parser library in Rust, which works like a deserializer from HTML to struct.
 
 ## Example
@@ -123,6 +125,8 @@ You can use the following types as a field value of the struct to parse.
   - `[T;N]`
   - `Option<T>`
   - `Vec<T>`
+
+<!-- cargo-rdme end -->
 
 ## License
 
