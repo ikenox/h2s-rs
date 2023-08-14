@@ -1,5 +1,6 @@
 use crate::Tuple;
 
+/// This constraint forces a functor implementation that `Self` and its associated type is the same type
 pub trait SelfConstraint<T> {}
 impl<F, T> SelfConstraint<T> for F where F: Functor<T, Structure<T> = Self> {}
 
