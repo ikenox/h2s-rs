@@ -3,13 +3,13 @@ use crate::Tuple;
 
 /// Converts from `Structure<A>` and `fn(A) -> Result<T>` to `Result<Structure<T>>`
 /// It works similar to `Traversable` in functional programming languages, but only for `Result` type
-pub trait Traversable: Functor {
+pub trait Traversable<T>: Functor<T> {
     fn traverse<A, B, E, F>(a: Self::Structure<A>, f: F) -> Result<Self::Structure<B>, E>
     where
         F: Fn(A) -> Result<B, E>;
 }
 
-impl<T> Traversable for ExactlyOne<T> {
+impl<T> Traversable<T> for ExactlyOne<T> {
     fn traverse<A, B, E, F>(a: Self::Structure<A>, f: F) -> Result<Self::Structure<B>, E>
     where
         F: Fn(A) -> Result<B, E>,
@@ -18,7 +18,7 @@ impl<T> Traversable for ExactlyOne<T> {
     }
 }
 
-impl<T> Traversable for Option<T> {
+impl<T> Traversable<T> for Option<T> {
     fn traverse<A, B, E, F>(a: Self::Structure<A>, f: F) -> Result<Self::Structure<B>, E>
     where
         F: Fn(A) -> Result<B, E>,
@@ -27,7 +27,7 @@ impl<T> Traversable for Option<T> {
     }
 }
 
-impl<T> Traversable for Vec<T> {
+impl<T> Traversable<T> for Vec<T> {
     fn traverse<A, B, E, F>(a: Self::Structure<A>, f: F) -> Result<Self::Structure<B>, E>
     where
         F: Fn(A) -> Result<B, E>,
@@ -39,7 +39,7 @@ impl<T> Traversable for Vec<T> {
     }
 }
 
-impl<T, const M: usize> Traversable for [T; M] {
+impl<T, const M: usize> Traversable<T> for [T; M] {
     fn traverse<A, B, E, F>(a: Self::Structure<A>, f: F) -> Result<Self::Structure<B>, E>
     where
         F: Fn(A) -> Result<B, E>,
@@ -56,7 +56,7 @@ impl<T, const M: usize> Traversable for [T; M] {
     }
 }
 
-impl<T, U> Traversable for Tuple<T, U> {
+impl<T, U> Traversable<U> for Tuple<T, U> {
     fn traverse<A, B, E, F>(a: Self::Structure<A>, f: F) -> Result<Self::Structure<B>, E>
     where
         F: Fn(A) -> Result<B, E>,

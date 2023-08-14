@@ -7,9 +7,9 @@ use super::*;
 pub trait FieldValue: Sized {
     type Inner: Parseable;
     /// An intermediate representation of the field value
-    type Wrapped: FunctorWithContext<Inner = Self::Inner>;
+    type Wrapped: FunctorWithContext<Self::Inner>;
 
-    fn finalize(wrapped: <Self::Wrapped as Functor>::Structure<Self::Inner>) -> Self;
+    fn finalize(wrapped: <Self::Wrapped as Functor<Self::Inner>>::Structure<Self::Inner>) -> Self;
 }
 
 impl<T> FieldValue for T

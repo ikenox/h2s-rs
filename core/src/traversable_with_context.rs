@@ -1,7 +1,7 @@
 use crate::functor::{ExactlyOne, Functor};
 use std::fmt::{Debug, Display};
 
-pub trait FunctorWithContext: Functor {
+pub trait FunctorWithContext<T>: Functor<T> {
     type Context: Context;
 
     fn fmap_with_context<A, B, F>(a: Self::Structure<A>, f: F) -> Self::Structure<B>
@@ -9,7 +9,7 @@ pub trait FunctorWithContext: Functor {
         F: Fn(Self::Context, A) -> B;
 }
 
-impl<T> FunctorWithContext for ExactlyOne<T> {
+impl<T> FunctorWithContext<T> for ExactlyOne<T> {
     type Context = NoContext;
 
     fn fmap_with_context<A, B, F>(a: Self::Structure<A>, f: F) -> Self::Structure<B>
@@ -20,7 +20,7 @@ impl<T> FunctorWithContext for ExactlyOne<T> {
     }
 }
 
-impl<T> FunctorWithContext for Option<T> {
+impl<T> FunctorWithContext<T> for Option<T> {
     type Context = NoContext;
 
     fn fmap_with_context<A, B, F>(a: Self::Structure<A>, f: F) -> Self::Structure<B>
@@ -31,7 +31,7 @@ impl<T> FunctorWithContext for Option<T> {
     }
 }
 
-impl<T> FunctorWithContext for Vec<T> {
+impl<T> FunctorWithContext<T> for Vec<T> {
     type Context = ListIndex;
 
     fn fmap_with_context<A, B, F>(a: Self::Structure<A>, f: F) -> Self::Structure<B>
@@ -44,7 +44,7 @@ impl<T> FunctorWithContext for Vec<T> {
     }
 }
 
-impl<T, const M: usize> FunctorWithContext for [T; M] {
+impl<T, const M: usize> FunctorWithContext<T> for [T; M] {
     type Context = ListIndex;
 
     fn fmap_with_context<A, B, F>(a: Self::Structure<A>, f: F) -> Self::Structure<B>

@@ -3,7 +3,7 @@ use crate::html::{CssSelector, HtmlElement};
 use std::fmt::{Debug, Display};
 
 pub trait TargetElementSelector: Debug + Display {
-    type Output<E>: Functor<Inner = E>;
+    type Output<E>: Functor<E>;
     fn select<E>(&self, n: &E) -> Self::Output<E>
     where
         E: HtmlElement;
