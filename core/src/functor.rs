@@ -1,18 +1,20 @@
 use crate::Tuple;
 
-/// This constraint forces a functor implementation that `Self` and its associated type is the same type
-pub trait SelfConstraint<T> {}
-impl<F, T> SelfConstraint<T> for F where F: Functor<T, Structure<T> = Self> {}
+pub trait SelfConstraint {}
 
-pub trait Functor<T>: SelfConstraint<T> {
-    type Structure<A>: Functor<A>;
+impl<F> SelfConstraint for F where F: Functor<Structure<<Self as Functor>::Inner> = Self> {}
+
+pub trait Functor: SelfConstraint {
+    type Inner;
+    type Structure<A>: Functor<Inner = A>;
 
     fn fmap<A, B, F>(a: Self::Structure<A>, f: F) -> Self::Structure<B>
     where
         F: Fn(A) -> B;
 }
 
-impl<T> Functor<T> for ExactlyOne<T> {
+impl<T> Functor for ExactlyOne<T> {
+    type Inner = T;
     type Structure<A> = ExactlyOne<A>;
 
     fn fmap<A, B, F>(a: Self::Structure<A>, f: F) -> Self::Structure<B>
@@ -23,7 +25,8 @@ impl<T> Functor<T> for ExactlyOne<T> {
     }
 }
 
-impl<T> Functor<T> for Option<T> {
+impl<T> Functor for Option<T> {
+    type Inner = T;
     type Structure<A> = Option<A>;
 
     fn fmap<A, B, F>(a: Self::Structure<A>, f: F) -> Self::Structure<B>
@@ -34,7 +37,8 @@ impl<T> Functor<T> for Option<T> {
     }
 }
 
-impl<T> Functor<T> for Vec<T> {
+impl<T> Functor for Vec<T> {
+    type Inner = T;
     type Structure<U> = Vec<U>;
 
     fn fmap<A, B, F>(a: Self::Structure<A>, f: F) -> Self::Structure<B>
@@ -45,7 +49,8 @@ impl<T> Functor<T> for Vec<T> {
     }
 }
 
-impl<T, const M: usize> Functor<T> for [T; M] {
+impl<T, const M: usize> Functor for [T; M] {
+    type Inner = T;
     type Structure<U> = [U; M];
 
     fn fmap<A, B, F>(a: Self::Structure<A>, f: F) -> Self::Structure<B>
@@ -56,7 +61,8 @@ impl<T, const M: usize> Functor<T> for [T; M] {
     }
 }
 
-impl<T, U> Functor<U> for Tuple<T, U> {
+impl<T, U> Functor for Tuple<T, U> {
+    type Inner = U;
     type Structure<A> = Tuple<T, A>;
 
     fn fmap<A, B, F>(a: Self::Structure<A>, f: F) -> Self::Structure<B>

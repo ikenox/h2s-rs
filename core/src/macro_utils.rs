@@ -38,7 +38,7 @@ where
     V: FieldValue<Wrapped = W, Inner = P>,
     P: Parseable<Input<E> = I>,
     I: ExtractedValue,
-    W: FunctorWithContext<P> + Traversable<P>,
+    W: FunctorWithContext<Structure<P> = W, Inner = P> + Traversable,
 {
     let target_elements = target_element_selector.select(source_element);
     let transformed = <_>::try_transform_from(target_elements)
